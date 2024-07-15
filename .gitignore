@@ -25,3 +25,5 @@ cover/*
 coverage.html
 
 main
+
+aws_credentials
