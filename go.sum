@@ -1,3 +1,5 @@
+github.com/a-castellano/go-types v0.0.1 h1:vD4DOuQgMUIE1eDQJ/zww81MWOVZgb3SBrgsPk/zLns=
+github.com/a-castellano/go-types v0.0.1/go.mod h1:VWPCDtrt/sTi8DS6N3FF/5pcVkv0/3YR0Oyg+Y/LOn4=
 github.com/aws/aws-sdk-go v1.54.19 h1:tyWV+07jagrNiCcGRzRhdtVjQs7Vy41NwsuOcl0IbVI=
 github.com/aws/aws-sdk-go v1.54.19/go.mod h1:eRwEWoyTWFMVYVQzKMNHWP5/RV4xIUGMQfXQHfHkpNU=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

@@ -11,7 +11,7 @@ import (
 
 func main() {
 
-	zoneId := os.Getenv("ZONE_ID")
+	zoneID := os.Getenv("ZONE_ID")
 	subdomain := os.Getenv("SUBDOMAIN")
 
 	sess, err := awssession.NewSession()
@@ -43,7 +43,7 @@ func main() {
 			},
 			Comment: aws.String("Updated by ot"),
 		},
-		HostedZoneId: aws.String(zoneId),
+		HostedZoneId: aws.String(zoneID),
 	}
 
 	resp, err := svc.ChangeResourceRecordSets(params)
