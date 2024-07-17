@@ -1,6 +1,7 @@
 package config
 
 import (
+	"cmp"
 	"errors"
 	"os"
 
@@ -12,6 +13,7 @@ type Config struct {
 	AWSZoneID      string // home-ip-monitor will send new IP values to be updated if associated ISP is the same than this value
 	Subdomain      string // This will be the queue used to send IP changes
 	UpdateQueue    string // This will be the queue used to send IP changes
+	AWSRegion      string
 	RabbitmqConfig *rabbitmqconfig.Config
 }
 
@@ -31,6 +33,8 @@ func NewConfig() (*Config, error) {
 	}
 
 	// Above env variables are not required in config
+
+	config.AWSRegion = cmp.Or(os.Getenv("AWS_REGION"), "us-west-2")
 
 	if config.AWSZoneID, envVariableFound = os.LookupEnv("AWS_ZONE_ID"); !envVariableFound {
 		return nil, errors.New("AWS_ZONE_ID env variable must be set")
