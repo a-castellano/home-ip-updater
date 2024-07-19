@@ -10,7 +10,7 @@ maintainer: "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>"
 description: |
   This program updates home domain IP
 vendor: "Windmaker"
-homepage: "https://git.windmaker.net/a-castellano/home-ip-monitor"
+homepage: "https://git.windmaker.net/a-castellano/home-ip-updater"
 license: "GPLV3"
 changelog: "changelog.yaml"
 contents:

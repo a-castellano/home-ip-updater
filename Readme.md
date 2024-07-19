@@ -1,6 +1,6 @@
 # Home IP Updater
 
-This program is suscribed to [home-ip-monitor](https://git.windmaker.net/a-castellano/home-ip-monitor) notify queue, it will update required DNS record with reases IP's from queue.
+This program is suscribed to [home-ip-monitor](https://git.windmaker.net/a-castellano/home-ip-monitor) update queue, it will update required DNS record with reases IP's from queue.
 
 # What this progam does?
 
