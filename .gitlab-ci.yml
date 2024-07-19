@@ -167,8 +167,8 @@ build_package:
     - mkdir -p "$(pwd)/go"
     - go env -w GOPATH="$(pwd)/go"
     - mkdir -p $GOPATH/src/github.com/a-castellano
-    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/home-ip-monitor
-    - cd $GOPATH/src/github.com/a-castellano/home-ip-monitor
+    - ln -s ${CI_PROJECT_DIR} $GOPATH/src/github.com/a-castellano/home-ip-updater
+    - cd $GOPATH/src/github.com/a-castellano/home-ip-updater
   script:
     - make build
     - nfpm package --packager deb
