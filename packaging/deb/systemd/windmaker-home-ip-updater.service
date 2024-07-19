@@ -2,7 +2,6 @@
 Description=Windmaker Home IP Updater
 Documentation=https://git.windmaker.net/a-castellano/home-ip-updater
 Wants=network-online.target
-Wants=windmaker-home-ip-monitor.timer
 After=nss-lookup.target
 After=network-online.target
 After=rabbitmq-server.service
