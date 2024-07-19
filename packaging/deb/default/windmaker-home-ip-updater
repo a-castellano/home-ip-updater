@@ -1,0 +1,23 @@
+# windmaker-home-ip-updater
+#
+# Required env variables
+# Check Docs:
+# https://git.windmaker.net/a-castellano/home-ip-updater
+#
+
+UPDATE_QUEUE_NAME="home-ip-monitor-updates"
+
+# AWS config
+
+AWS_ACCESS_KEY_ID=""
+AWS_SECRET_ACCESS_KEY=""
+AWS_REGION=""
+AWS_ZONE_ID=""
+SUBDOMAIN=""
+
+# RabbitMQ config
+
+RABBITMQ_HOST="localhost"
+RABBITMQ_PORT=5672
+RABBITMQ_USER="guest"
+RABBITMQ_PASSWORD="guest"
