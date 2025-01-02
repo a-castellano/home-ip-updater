@@ -1,9 +1,18 @@
+- semver: 0.0.2
+  date: 2025-01-02T15:19:00+01:00
+  packager: Álvaro Castellano Vela <alvaro.castellano.vela@gmail>
+  changes:
+    - note: |-
+        Updates PowerDNS required record too
+      author:
+        name: Álvaro Castellano Vela
+        email: alvaro.castellano.vela@gmail.com
 - semver: 0.0.1
   date: 2024-07-18T23:03:00+02:00
   packager: Álvaro Castellano Vela <alvaro.castellano.vela@gmail>
   changes:
-  - note: |-
-      First release
-    author:
-      name: Álvaro Castellano Vela
-      email: alvaro.castellano.vela@gmail.com
+    - note: |-
+        First release
+      author:
+        name: Álvaro Castellano Vela
+        email: alvaro.castellano.vela@gmail.com
