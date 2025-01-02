@@ -2,7 +2,10 @@ package updater
 
 import (
 	"context"
+	"net/http"
+	"time"
 
+	"github.com/a-castellano/home-ip-updater/powerdnsclient"
 	aws "github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	route53 "github.com/aws/aws-sdk-go-v2/service/route53"
@@ -54,6 +57,29 @@ func (awsupdater *AWSUpdater) Update(ctx context.Context) error {
 	}
 	_, errChange := client.ChangeResourceRecordSets(ctx, input)
 
+	if errChange != nil {
+		return errChange
+	}
+
+	return nil
+}
+
+// PowerDNSUpdater defines main struct that implements Updater interface
+type PowerDNSUpdater struct {
+	PowerDNSClient powerdnsclient.PowerDNSClient
+	ZoneName       string
+	Subdomain      string
+	IP             string
+}
+
+// Update updates powerDNS record
+func (pdnsupdater *PowerDNSUpdater) Update(ctx context.Context) error {
+
+	httpClient := http.Client{
+		Timeout: time.Second * 1, // Maximum of 1 Second
+	}
+
+	errChange := pdnsupdater.PowerDNSClient.UpdateRecord(httpClient, pdnsupdater.ZoneName, pdnsupdater.Subdomain, pdnsupdater.IP)
 	if errChange != nil {
 		return errChange
 	}

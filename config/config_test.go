@@ -31,6 +31,18 @@ var currentRabbitmqUserDefined bool
 var currentRabbitmqPassword string
 var currentRabbitmqPasswordDefined bool
 
+var currentPowerDNSHost string
+var currentPowerDNSHostDefined bool
+
+var currentPowerDNSPort string
+var currentPowerDNSPortDefined bool
+
+var currentPowerDNSAPIKey string
+var currentPowerDNSAPIKeyDefined bool
+
+var currentPowerDNSZoneName string
+var currentPowerDNSZoneNameDefined bool
+
 func setUp() {
 
 	if envAWSAccessKey, found := os.LookupEnv("AWS_ACCESS_KEY_ID"); found {
@@ -61,6 +73,34 @@ func setUp() {
 		currentSubdomainDefined = false
 	}
 
+	if envPowerDNSAPIHost, found := os.LookupEnv("POWER_DNS_API_HOST"); found {
+		currentPowerDNSHost = envPowerDNSAPIHost
+		currentPowerDNSHostDefined = true
+	} else {
+		currentPowerDNSHostDefined = false
+	}
+
+	if envPowerDNSAPIPort, found := os.LookupEnv("POWER_DNS_API_PORT"); found {
+		currentPowerDNSPort = envPowerDNSAPIPort
+		currentPowerDNSPortDefined = true
+	} else {
+		currentPowerDNSPortDefined = false
+	}
+
+	if envPowerDNSAPIKey, found := os.LookupEnv("POWER_DNS_API_KEY"); found {
+		currentPowerDNSAPIKey = envPowerDNSAPIKey
+		currentPowerDNSAPIKeyDefined = true
+	} else {
+		currentPowerDNSAPIKeyDefined = false
+	}
+
+	if envPowerDNSZoneName, found := os.LookupEnv("POWER_DNS_ZONE_NAME"); found {
+		currentPowerDNSZoneName = envPowerDNSZoneName
+		currentPowerDNSZoneNameDefined = true
+	} else {
+		currentPowerDNSZoneNameDefined = false
+	}
+
 	os.Unsetenv("AWS_ACCESS_KEY_ID")
 	os.Unsetenv("AWS_SECRET_ACCESS_KEY")
 	os.Unsetenv("AWS_ZONE_ID")
@@ -70,6 +110,11 @@ func setUp() {
 	os.Unsetenv("RABBITMQ_PORT")
 	os.Unsetenv("RABBITMQ_DATABASE")
 	os.Unsetenv("RABBITMQ_PASSWORD")
+
+	os.Unsetenv("POWER_DNS_API_HOST")
+	os.Unsetenv("POWER_DNS_API_PORT")
+	os.Unsetenv("POWER_DNS_API_KEY")
+	os.Unsetenv("POWER_DNS_ZONE_NAME")
 }
 
 func teardown() {
@@ -114,6 +159,30 @@ func teardown() {
 		os.Setenv("RABBITMQ_PASSWORD", currentRabbitmqPassword)
 	} else {
 		os.Unsetenv("RABBITMQ_PASSWORD")
+	}
+
+	if currentPowerDNSHostDefined {
+		os.Setenv("POWER_DNS_API_HOST", currentPowerDNSHost)
+	} else {
+		os.Unsetenv("POWER_DNS_API_HOST")
+	}
+
+	if currentPowerDNSPortDefined {
+		os.Setenv("POWER_DNS_API_PORT", currentPowerDNSPort)
+	} else {
+		os.Unsetenv("POWER_DNS_API_PORT")
+	}
+
+	if currentPowerDNSAPIKeyDefined {
+		os.Setenv("POWER_DNS_API_KEY", currentPowerDNSAPIKey)
+	} else {
+		os.Unsetenv("POWER_DNS_API_KEY")
+	}
+
+	if currentPowerDNSZoneNameDefined {
+		os.Setenv("POWER_DNS_ZONE_NAME", currentPowerDNSZoneName)
+	} else {
+		os.Unsetenv("POWER_DNS_ZONE_NAME")
 	}
 }
 
@@ -160,6 +229,10 @@ func TestConfigWithoudZoneIdariable(t *testing.T) {
 
 	os.Setenv("AWS_ACCESS_KEY_ID", "test")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
+	os.Setenv("POWER_DNS_API_HOST", "host")
+	os.Setenv("POWER_DNS_API_PORT", "8080")
+	os.Setenv("POWER_DNS_API_KEY", "key")
+	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
 
 	_, err := NewConfig()
 
@@ -181,6 +254,10 @@ func TestConfigWithoudSubdomainariable(t *testing.T) {
 	os.Setenv("AWS_ACCESS_KEY_ID", "test")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
 	os.Setenv("AWS_ZONE_ID", "123")
+	os.Setenv("POWER_DNS_API_HOST", "host")
+	os.Setenv("POWER_DNS_API_PORT", "8080")
+	os.Setenv("POWER_DNS_API_KEY", "key")
+	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
 
 	_, err := NewConfig()
 
@@ -204,11 +281,95 @@ func TestConfigWithRabbitmqInvalidPort(t *testing.T) {
 	os.Setenv("AWS_ZONE_ID", "123")
 	os.Setenv("SUBDOMAIN", "test.windmaker.net")
 	os.Setenv("RABBITMQ_PORT", "invalidport")
+	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
 
 	_, err := NewConfig()
 
 	if err == nil {
 		t.Errorf("TestConfigWithRabbitmqInvalidPort should fail.")
+	}
+
+}
+
+func TestConfigWithoutPowerDNSAPIHost(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	os.Setenv("AWS_ACCESS_KEY_ID", "test")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
+	os.Setenv("AWS_ZONE_ID", "123")
+	os.Setenv("SUBDOMAIN", "test.windmaker.net")
+	os.Setenv("POWER_DNS_API_PORT", "8080")
+	os.Setenv("POWER_DNS_API_KEY", "key")
+	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
+
+	_, err := NewConfig()
+
+	if err == nil {
+		t.Errorf("TestConfigWithoutPowerDNSAPIHost should fail.")
+	}
+
+}
+
+func TestConfigWithoutPowerDNSAPIPort(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	os.Setenv("AWS_ACCESS_KEY_ID", "test")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
+	os.Setenv("AWS_ZONE_ID", "123")
+	os.Setenv("SUBDOMAIN", "test.windmaker.net")
+	os.Setenv("POWER_DNS_API_HOST", "host")
+	os.Setenv("POWER_DNS_API_KEY", "key")
+	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
+
+	_, err := NewConfig()
+
+	if err == nil {
+		t.Errorf("TestConfigWithoutPowerDNSAPIPort should fail.")
+	}
+
+}
+
+func TestConfigWithoutPowerDNSAPIKey(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	os.Setenv("AWS_ACCESS_KEY_ID", "test")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
+	os.Setenv("AWS_ZONE_ID", "123")
+	os.Setenv("SUBDOMAIN", "test.windmaker.net")
+	os.Setenv("POWER_DNS_API_HOST", "host")
+	os.Setenv("POWER_DNS_API_PORT", "8080")
+	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
+
+	_, err := NewConfig()
+
+	if err == nil {
+		t.Errorf("TestConfigWithoutPowerDNSAPIKey should fail.")
+	}
+
+}
+
+func TestConfigWithoutPowerDNSZoneName(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	os.Setenv("AWS_ACCESS_KEY_ID", "test")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
+	os.Setenv("AWS_ZONE_ID", "123")
+	os.Setenv("SUBDOMAIN", "test.windmaker.net")
+	os.Setenv("POWER_DNS_API_HOST", "host")
+	os.Setenv("POWER_DNS_API_PORT", "8080")
+
+	_, err := NewConfig()
+
+	if err == nil {
+		t.Errorf("TestConfigWithoutPowerDNSAPIKey should fail.")
 	}
 
 }
@@ -222,6 +383,10 @@ func TestValidConfig(t *testing.T) {
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
 	os.Setenv("AWS_ZONE_ID", "123")
 	os.Setenv("SUBDOMAIN", "test.windmaker.net")
+	os.Setenv("POWER_DNS_API_HOST", "host")
+	os.Setenv("POWER_DNS_API_PORT", "8080")
+	os.Setenv("POWER_DNS_API_KEY", "key")
+	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
 
 	_, err := NewConfig()
 
