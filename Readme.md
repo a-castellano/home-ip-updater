@@ -2,7 +2,7 @@
 
 [![pipeline status](https://git.windmaker.net/a-castellano/home-ip-updater/badges/master/pipeline.svg)](https://git.windmaker.net/a-castellano/home-ip-updater/pipelines)[![coverage report](https://git.windmaker.net/a-castellano/home-ip-updater/badges/master/coverage.svg)](https://a-castellano.gitpages.windmaker.net/home-ip-updater/coverage.html)[![Quality Gate Status](https://sonarqube.windmaker.net/api/project_badges/measure?project=a-castellano_home-ip-updater_533a7009-26fb-43b9-b6f3-eb5326c083b6&metric=alert_status&token=sqb_df6b40224599cede55c63c9203eb5fcdb0a4bc9e)](https://sonarqube.windmaker.net/dashboard?id=a-castellano_home-ip-updater_533a7009-26fb-43b9-b6f3-eb5326c083b6)
 
-This program is subscribed to [home-ip-monitor](https://git.windmaker.net/a-castellano/home-ip-monitor) update queue, it will update required DNS record with readed IP's from queue.
+This program is subscribed to [home-ip-monitor](https://git.windmaker.net/a-castellano/home-ip-monitor) update queue, it will update required DNS record with read IP's from queue.
 
 # What this utility does?
 

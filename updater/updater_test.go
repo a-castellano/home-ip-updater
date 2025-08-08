@@ -38,7 +38,7 @@ func setUp() {
 	}
 
 	if envAWSZoneId, found := os.LookupEnv("AWS_ZONE_ID"); found {
-		currentAWSSecretKey = envAWSZoneId
+		currentAWSZoneId = envAWSZoneId
 		currentAWSZoneIdDefined = true
 	} else {
 		currentAWSZoneIdDefined = false
@@ -80,7 +80,7 @@ func teardown() {
 
 }
 
-func TestUpdaterWithInvalidAWSCredentails(t *testing.T) {
+func TestUpdaterWithInvalidAWSCredentials(t *testing.T) {
 
 	setUp()
 	defer teardown()
@@ -98,7 +98,7 @@ func TestUpdaterWithInvalidAWSCredentails(t *testing.T) {
 	err := updater.Update(ctx)
 
 	if err == nil {
-		t.Errorf("TestUpdaterWithInvalidAWSCredentails should fail with invalid AWS_ACCESS_KEY_ID.")
+		t.Errorf("TestUpdaterWithInvalidAWSCredentials should fail with invalid AWS_ACCESS_KEY_ID.")
 	}
 
 }
@@ -144,7 +144,7 @@ func TestUpdaterWithInvalidZoneID(t *testing.T) {
 	err := updater.Update(ctx)
 
 	if err == nil {
-		t.Errorf("TestUpdaterWithInvalidAWSCredentails should fail with invalid AWS_ACCESS_KEY_ID.")
+		t.Errorf("TestUpdaterWithInvalidAWSCredentials should fail with invalid AWS_ACCESS_KEY_ID.")
 	}
 }
 

@@ -9,7 +9,7 @@ import (
 	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 )
 
-// Config struct contians required config variables
+// Config struct contains required config variables
 type Config struct {
 	AWSZoneID        string // home-ip-monitor will send new IP values to be updated if associated ISP is the same than this value
 	Subdomain        string // Subdomain to update

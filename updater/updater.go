@@ -9,7 +9,7 @@ import (
 	r53types "github.com/aws/aws-sdk-go-v2/service/route53/types"
 )
 
-// Updater defines an interface in order to mock aws call inother libraries
+// Updater defines an interface in order to mock aws call in other libraries
 type Updater interface {
 	Update(context.Context) error
 }

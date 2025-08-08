@@ -60,7 +60,7 @@ func setUp() {
 	}
 
 	if envAWSZoneId, found := os.LookupEnv("AWS_ZONE_ID"); found {
-		currentAWSSecretKey = envAWSZoneId
+		currentAWSZoneId = envAWSZoneId
 		currentAWSZoneIdDefined = true
 	} else {
 		currentAWSZoneIdDefined = false
@@ -222,7 +222,7 @@ func TestConfigWithoutSecretKeyVariable(t *testing.T) {
 
 }
 
-func TestConfigWithoudZoneIdariable(t *testing.T) {
+func TestConfigWithoutZoneIdVariable(t *testing.T) {
 
 	setUp()
 	defer teardown()
@@ -237,16 +237,16 @@ func TestConfigWithoudZoneIdariable(t *testing.T) {
 	_, err := NewConfig()
 
 	if err == nil {
-		t.Errorf("TestConfigWithoudZoneIdariable gshould fail.")
+		t.Errorf("TestConfigWithoutZoneIdVariable should fail.")
 	} else {
 		if err.Error() != "AWS_ZONE_ID env variable must be set" {
-			t.Errorf("TestConfigWithoutSecretKeyVariable error should be \"AWS_ZONE_ID env variable must be set env variable must be set\" but it was \"%s\".", err.Error())
+			t.Errorf("TestConfigWithoutZoneIdVariable error should be \"AWS_ZONE_ID env variable must be set\" but it was \"%s\".", err.Error())
 		}
 	}
 
 }
 
-func TestConfigWithoudSubdomainariable(t *testing.T) {
+func TestConfigWithoutSubdomainVariable(t *testing.T) {
 
 	setUp()
 	defer teardown()
@@ -262,10 +262,10 @@ func TestConfigWithoudSubdomainariable(t *testing.T) {
 	_, err := NewConfig()
 
 	if err == nil {
-		t.Errorf("TestConfigWithoudZoneIdashould fail.")
+		t.Errorf("TestConfigWithoutSubdomainVariable should fail.")
 	} else {
 		if err.Error() != "SUBDOMAIN env variable must be set" {
-			t.Errorf("TestConfigWithoutSecretKeyVariable error should be \"SUBDOMAIN env variable must be set\" but it was \"%s\".", err.Error())
+			t.Errorf("TestConfigWithoutSubdomainVariable error should be \"SUBDOMAIN env variable must be set\" but it was \"%s\".", err.Error())
 		}
 	}
 
