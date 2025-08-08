@@ -4,15 +4,12 @@ import (
 	"context"
 	"log"
 	"log/syslog"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	messagebroker "github.com/a-castellano/go-services/messagebroker"
 	config "github.com/a-castellano/home-ip-updater/config"
-	"github.com/a-castellano/home-ip-updater/powerdnsclient"
 	updater "github.com/a-castellano/home-ip-updater/updater"
 )
 
@@ -39,7 +36,7 @@ func main() {
 	log.Print("Creating RabbitMQ client")
 	ctx, cancel := context.WithCancel(context.Background())
 
-	rabbitmqClient := messagebroker.NewRabbimqClient(appConfig.RabbitmqConfig)
+	rabbitmqClient := messagebroker.NewRabbitmqClient(appConfig.RabbitmqConfig)
 	messageBroker := messagebroker.MessageBroker{Client: rabbitmqClient}
 
 	messagesReceived := make(chan []byte)
@@ -48,16 +45,6 @@ func main() {
 	log.Print("Define os signal management")
 	signalChannel := make(chan os.Signal, 2)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
-
-	log.Print("Start PowerDNS Client")
-	httpClient := http.Client{
-		Timeout: time.Second * 5, // Maximum of 5 seconds
-	}
-	powerDNSClient, clientError := powerdnsclient.NewClient(httpClient, appConfig.PowerDNSHost, appConfig.PowerDNSPort, appConfig.PowerDNSAPIKey)
-	if clientError != nil {
-		log.Print(clientError.Error())
-		os.Exit(1)
-	}
 
 	go func() {
 		sig := <-signalChannel
@@ -82,13 +69,6 @@ func main() {
 			log.Printf("Received new IP to update: %s.", ipReceived)
 			log.Printf("Updating %s DNS record.", appConfig.Subdomain)
 
-			powerDNSUpdater := updater.PowerDNSUpdater{
-				PowerDNSClient: powerDNSClient,
-				ZoneName:       appConfig.PowerDNSZoneName,
-				Subdomain:      appConfig.Subdomain,
-				IP:             ipReceived,
-			}
-
 			awsUpdater := updater.AWSUpdater{
 				ZoneID:    appConfig.AWSZoneID,
 				Subdomain: appConfig.Subdomain,
@@ -96,11 +76,6 @@ func main() {
 			}
 
 			updateErr := awsUpdater.Update(ctx)
-			if updateErr != nil {
-				log.Print(updateErr.Error())
-			}
-
-			updateErr = powerDNSUpdater.Update(ctx)
 			if updateErr != nil {
 				log.Print(updateErr.Error())
 			}

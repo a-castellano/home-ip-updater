@@ -41,15 +41,6 @@ In this case, an user with limited permissions is created with the following pol
 }
 ```
 
-## PowerDNS config
-
-This program uses PowerDSN API for updating records, the following env vars must be set:
-
-**POWER_DNS_API_HOST**: PowerDNS API IP
-**POWER_DNS_API_PORT**: PowerDNS API Port
-**POWER_DNS_API_KEY**: API key used to access PowerDNS API
-**POWER_DNS_ZONE_NAME**: DNS Zone name to update
-
 ## Domain config
 
 Required domain A record will be updated, domain value is given by the following env variable:

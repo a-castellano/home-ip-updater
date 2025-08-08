@@ -85,8 +85,6 @@ coverage:
     - if: $CI_COMMIT_BRANCH == 'develop'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   services:
-    - name: registry.windmaker.net:5005/a-castellano/limani/base_redis_server:202412301859
-      alias: redis
     - name: registry.windmaker.net:5005/a-castellano/limani/base_rabbitmq_server:202412301859
       alias: rabbitmq
   before_script:
