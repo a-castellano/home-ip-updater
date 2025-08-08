@@ -1,19 +1,18 @@
 //go:build integration_tests || unit_tests
 
+// Package updater_test provides comprehensive testing for the updater package.
+// It includes unit tests for AWS Route53 DNS record updates and error handling.
 package updater
 
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
-	"strconv"
 	"testing"
-	"time"
-
-	"github.com/a-castellano/home-ip-updater/powerdnsclient"
 )
 
+// Global variables to store original environment variable values
+// These are used to restore the environment state after tests
 var currentAWSAccessKey string
 var currentAWSAccessKeyDefined bool
 
@@ -26,17 +25,12 @@ var currentAWSZoneIdDefined bool
 var currentSubdomain string
 var currentSubdomainDefined bool
 
-var currentPowerDNSHost string
-var currentPowerDNSHostDefined bool
-
-var currentPowerDNSPort string
-var currentPowerDNSPortDefined bool
-
-var currentPowerDNSAPIKey string
-var currentPowerDNSAPIKeyDefined bool
-
+// setUp saves the current environment variables and clears them for testing.
+// This ensures that tests start with a clean environment and can properly
+// test AWS credential validation without interference from existing environment variables.
 func setUp() {
 
+	// Save AWS access key if it exists
 	if envAWSAccessKey, found := os.LookupEnv("AWS_ACCESS_KEY_ID"); found {
 		currentAWSAccessKey = envAWSAccessKey
 		currentAWSAccessKeyDefined = true
@@ -44,6 +38,7 @@ func setUp() {
 		currentAWSAccessKeyDefined = false
 	}
 
+	// Save AWS secret key if it exists
 	if envAWSSecretKey, found := os.LookupEnv("AWS_SECRET_ACCESS_KEY"); found {
 		currentAWSSecretKey = envAWSSecretKey
 		currentAWSSecretKeyDefined = true
@@ -51,13 +46,15 @@ func setUp() {
 		currentAWSSecretKeyDefined = false
 	}
 
+	// Save AWS zone ID if it exists
 	if envAWSZoneId, found := os.LookupEnv("AWS_ZONE_ID"); found {
-		currentAWSSecretKey = envAWSZoneId
+		currentAWSZoneId = envAWSZoneId
 		currentAWSZoneIdDefined = true
 	} else {
 		currentAWSZoneIdDefined = false
 	}
 
+	// Save subdomain if it exists
 	if envSubdomain, found := os.LookupEnv("SUBDOMAIN"); found {
 		currentSubdomain = envSubdomain
 		currentSubdomainDefined = true
@@ -65,39 +62,20 @@ func setUp() {
 		currentSubdomainDefined = false
 	}
 
-	if envPowerDNSAPIHost, found := os.LookupEnv("POWER_DNS_API_HOST"); found {
-		currentPowerDNSHost = envPowerDNSAPIHost
-		currentPowerDNSHostDefined = true
-	} else {
-		currentPowerDNSHostDefined = false
-	}
-
-	if envPowerDNSAPIPort, found := os.LookupEnv("POWER_DNS_API_PORT"); found {
-		currentPowerDNSPort = envPowerDNSAPIPort
-		currentPowerDNSPortDefined = true
-	} else {
-		currentPowerDNSPortDefined = false
-	}
-
-	if envPowerDNSAPIKey, found := os.LookupEnv("POWER_DNS_API_KEY"); found {
-		currentPowerDNSAPIKey = envPowerDNSAPIKey
-		currentPowerDNSAPIKeyDefined = true
-	} else {
-		currentPowerDNSAPIKeyDefined = false
-	}
-
+	// Clear all environment variables to ensure clean test state
 	os.Unsetenv("AWS_ACCESS_KEY_ID")
 	os.Unsetenv("AWS_SECRET_ACCESS_KEY")
 	os.Unsetenv("AWS_ZONE_ID")
 	os.Unsetenv("SUBDOMAIN")
-	os.Unsetenv("POWER_DNS_API_HOST")
-	os.Unsetenv("POWER_DNS_API_PORT")
-	os.Unsetenv("POWER_DNS_API_KEY")
 
 }
 
+// teardown restores the original environment variables after each test.
+// This ensures that tests don't affect each other and the environment
+// is returned to its original state.
 func teardown() {
 
+	// Restore AWS credentials if they existed before
 	if currentAWSAccessKeyDefined {
 		os.Setenv("AWS_ACCESS_KEY_ID", currentAWSAccessKey)
 	} else {
@@ -116,33 +94,19 @@ func teardown() {
 		os.Unsetenv("AWS_ZONE_ID")
 	}
 
-	if currentPowerDNSHostDefined {
-		os.Setenv("POWER_DNS_API_HOST", currentPowerDNSHost)
-	} else {
-		os.Unsetenv("POWER_DNS_API_HOST")
-	}
-
-	if currentPowerDNSPortDefined {
-		os.Setenv("POWER_DNS_API_PORT", currentPowerDNSPort)
-	} else {
-		os.Unsetenv("POWER_DNS_API_PORT")
-	}
-
-	if currentPowerDNSAPIKeyDefined {
-		os.Setenv("POWER_DNS_API_KEY", currentPowerDNSAPIKey)
-	} else {
-		os.Unsetenv("POWER_DNS_API_KEY")
-	}
-
 }
 
-func TestUpdaterWithInvalidAWSCredentails(t *testing.T) {
+// TestUpdaterWithInvalidAWSCredentials verifies that the AWS updater returns an error
+// when invalid AWS credentials are provided. This tests the AWS SDK's credential
+// validation and error handling.
+func TestUpdaterWithInvalidAWSCredentials(t *testing.T) {
 
 	setUp()
 	defer teardown()
 
 	ctx := context.TODO()
 
+	// Create updater with invalid credentials
 	updater := AWSUpdater{
 		ZoneID:    "any",
 		Subdomain: "any",
@@ -154,11 +118,14 @@ func TestUpdaterWithInvalidAWSCredentails(t *testing.T) {
 	err := updater.Update(ctx)
 
 	if err == nil {
-		t.Errorf("TestUpdaterWithInvalidAWSCredentails should fail with invalid AWS_ACCESS_KEY_ID.")
+		t.Errorf("TestUpdaterWithInvalidAWSCredentials should fail with invalid AWS_ACCESS_KEY_ID.")
 	}
 
 }
 
+// TestUpdaterWithInvalidSecretKey verifies that the AWS updater returns an error
+// when a valid access key but invalid secret key is provided. This tests
+// the AWS SDK's credential validation for secret keys.
 func TestUpdaterWithInvalidSecretKey(t *testing.T) {
 
 	setUp()
@@ -166,6 +133,7 @@ func TestUpdaterWithInvalidSecretKey(t *testing.T) {
 
 	ctx := context.TODO()
 
+	// Create updater with valid access key but invalid secret key
 	updater := AWSUpdater{
 		ZoneID:    "any",
 		Subdomain: "any",
@@ -182,6 +150,9 @@ func TestUpdaterWithInvalidSecretKey(t *testing.T) {
 
 }
 
+// TestUpdaterWithInvalidZoneID verifies that the AWS updater returns an error
+// when an invalid hosted zone ID is provided. This tests the Route53 API's
+// validation of hosted zone IDs and error handling.
 func TestUpdaterWithInvalidZoneID(t *testing.T) {
 
 	setUp()
@@ -189,6 +160,7 @@ func TestUpdaterWithInvalidZoneID(t *testing.T) {
 
 	ctx := context.TODO()
 
+	// Create updater with invalid zone ID
 	updater := AWSUpdater{
 		ZoneID:    "any",
 		Subdomain: "any",
@@ -200,68 +172,19 @@ func TestUpdaterWithInvalidZoneID(t *testing.T) {
 	err := updater.Update(ctx)
 
 	if err == nil {
-		t.Errorf("TestUpdaterWithInvalidAWSCredentails should fail with invalid AWS_ACCESS_KEY_ID.")
+		t.Errorf("TestUpdaterWithInvalidAWSCredentials should fail with invalid AWS_ACCESS_KEY_ID.")
 	}
 }
 
-func TestUpdaterWithInvalidPowerDNSAPIKey(t *testing.T) {
-
-	setUp()
-	defer teardown()
-
-	httpClient := http.Client{
-		Timeout: time.Second * 5, // Maximum of 5 seconds
-	}
-
-	ctx := context.TODO()
-	api_port, _ := strconv.Atoi(os.Getenv("CI_POWER_DNS_API_PORT"))
-	powerDNSClient, _ := powerdnsclient.NewClient(httpClient, os.Getenv("CI_POWER_DNS_API_HOST"), api_port, "invalidkey")
-
-	updater := PowerDNSUpdater{
-		PowerDNSClient: powerDNSClient,
-		ZoneName:       "any",
-		Subdomain:      "any",
-		IP:             "any",
-	}
-
-	err := updater.Update(ctx)
-
-	if err == nil {
-		t.Errorf("TestUpdaterWithInvalidPowerDNSAPIKey should fail with invalid PowerDNS API key.")
-	}
-}
-
-func TestUpdaterWithValidPowerDNSAPIKey(t *testing.T) {
-
-	setUp()
-	defer teardown()
-
-	httpClient := http.Client{
-		Timeout: time.Second * 5, // Maximum of 5 seconds
-	}
-
-	ctx := context.TODO()
-	api_port, _ := strconv.Atoi(os.Getenv("CI_POWER_DNS_API_PORT"))
-	powerDNSClient, _ := powerdnsclient.NewClient(httpClient, os.Getenv("CI_POWER_DNS_API_HOST"), api_port, os.Getenv("CI_POWER_DNS_API_KEY"))
-
-	updater := PowerDNSUpdater{
-		PowerDNSClient: powerDNSClient,
-		ZoneName:       "windmaker.net",
-		Subdomain:      os.Getenv("CI_SUBDOMAIN"),
-		IP:             "192.168.1.1",
-	}
-
-	err := updater.Update(ctx)
-
-	if err != nil {
-		t.Errorf("TestUpdaterWithValidPowerDNSAPIKey should not fail with valid PowerDNS API key. Error was \"%s\"", err.Error())
-	}
-}
-
+// TestUpdaterWithValidData verifies that the AWS updater succeeds when all
+// parameters are valid. This is the happy path test that ensures the DNS
+// update functionality works correctly with proper credentials and configuration.
+// This test requires valid AWS credentials and a real hosted zone ID to pass.
 func TestUpdaterWithValidData(t *testing.T) {
 
 	ctx := context.TODO()
 
+	// Create updater with valid configuration
 	updater := AWSUpdater{
 		ZoneID:    os.Getenv("CI_ZONE_ID"),
 		Subdomain: os.Getenv("CI_SUBDOMAIN"),

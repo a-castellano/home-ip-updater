@@ -1,66 +1,60 @@
+// Package config provides configuration management for the home-ip-updater service.
+// It handles environment variable validation and provides a centralized configuration
+// structure for AWS and RabbitMQ settings.
 package config
 
 import (
 	"cmp"
 	"errors"
 	"os"
-	"strconv"
 
 	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
 )
 
-// Config struct contians required config variables
+// Config contains all configuration variables required by the home-ip-updater service.
+// It includes settings for AWS Route53, RabbitMQ, and domain configuration.
 type Config struct {
-	AWSZoneID        string // home-ip-monitor will send new IP values to be updated if associated ISP is the same than this value
-	Subdomain        string // Subdomain to update
-	PowerDNSAPIKey   string // PowerDNS API key
-	PowerDNSHost     string // PowerDNS API Host
-	PowerDNSPort     int    // PowerDNS API Port
-	PowerDNSZoneName string // PowerDNS API Port
-	UpdateQueue      string // This will be the queue used to send IP changes
-	RabbitmqConfig   *rabbitmqconfig.Config
+	AWSZoneID      string                 // AWS Route53 hosted zone ID for DNS updates
+	Subdomain      string                 // Subdomain to update with new IP addresses
+	UpdateQueue    string                 // RabbitMQ queue name for receiving IP updates
+	RabbitmqConfig *rabbitmqconfig.Config // RabbitMQ connection configuration
 }
 
-// NewConfig checks if required env variables are present, returns config instance
+// NewConfig validates and loads all required environment variables into a Config struct.
+// It performs validation for AWS credentials and RabbitMQ configuration.
+// Returns an error if any required environment variables are missing or invalid.
+//
+// Required environment variables:
+//   - AWS_ACCESS_KEY_ID: AWS access key for Route53 API access
+//   - AWS_SECRET_ACCESS_KEY: AWS secret key for Route53 API access
+//   - AWS_ZONE_ID: Route53 hosted zone ID
+//   - SUBDOMAIN: Subdomain to update
+//
+// Optional environment variables:
+//   - UPDATE_QUEUE_NAME: RabbitMQ queue name (defaults to "home-ip-monitor-updates")
+//   - AWS_REGION: AWS region (defaults to "us-west-2")
 func NewConfig() (*Config, error) {
 	config := Config{}
 
 	var envVariableFound bool
-	var PowerDNSPortString string
-	// First check for AWS_ACCESS_KEY_ID env variable
+
+	// Validate AWS credentials - required for Route53 DNS updates
 	if _, envVariableFound = os.LookupEnv("AWS_ACCESS_KEY_ID"); !envVariableFound {
 		return nil, errors.New("AWS_ACCESS_KEY_ID env variable must be set")
 	}
 
-	// Now check for AWS_SECRET_ACCESS_KEY
 	if _, envVariableFound = os.LookupEnv("AWS_SECRET_ACCESS_KEY"); !envVariableFound {
 		return nil, errors.New("AWS_SECRET_ACCESS_KEY env variable must be set")
 	}
 
-	// All PowerDNS variables are required
-	if config.PowerDNSHost, envVariableFound = os.LookupEnv("POWER_DNS_API_HOST"); !envVariableFound {
-		return nil, errors.New("POWER_DNS_API_HOST env variable must be set")
-	}
-	if PowerDNSPortString, envVariableFound = os.LookupEnv("POWER_DNS_API_PORT"); !envVariableFound {
-		return nil, errors.New("POWER_DNS_API_PORT env variable must be set")
-	}
-	config.PowerDNSPort, _ = strconv.Atoi(PowerDNSPortString)
-	if config.PowerDNSAPIKey, envVariableFound = os.LookupEnv("POWER_DNS_API_KEY"); !envVariableFound {
-		return nil, errors.New("POWER_DNS_API_KEY env variable must be set")
-	}
-	if config.PowerDNSZoneName, envVariableFound = os.LookupEnv("POWER_DNS_ZONE_NAME"); !envVariableFound {
-		return nil, errors.New("POWER_DNS_ZONE_NAME env variable must be set")
-	}
-
-	// Above env variables are not required in config
-
-	// Retrieve UpdateQueue name, default is home-ip-monitor-updates
+	// Set RabbitMQ queue name with default value
 	config.UpdateQueue = cmp.Or(os.Getenv("UPDATE_QUEUE_NAME"), "home-ip-monitor-updates")
 
-	// Sets AWS region
+	// Set AWS region with default value
 	AWSRegion := cmp.Or(os.Getenv("AWS_REGION"), "us-west-2")
 	os.Setenv("AWS_REGION", AWSRegion)
 
+	// Validate AWS Route53 configuration
 	if config.AWSZoneID, envVariableFound = os.LookupEnv("AWS_ZONE_ID"); !envVariableFound {
 		return nil, errors.New("AWS_ZONE_ID env variable must be set")
 	}
@@ -69,6 +63,7 @@ func NewConfig() (*Config, error) {
 		return nil, errors.New("SUBDOMAIN env variable must be set")
 	}
 
+	// Load RabbitMQ configuration from environment variables
 	var rabbitmqConfigErr error
 	config.RabbitmqConfig, rabbitmqConfigErr = rabbitmqconfig.NewConfig()
 	if rabbitmqConfigErr != nil {
