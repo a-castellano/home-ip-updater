@@ -1,0 +1,23 @@
+# Docker Compose configuration for home-ip-updater development environment
+# This file sets up the necessary services for development and testing
+version: "3.8"
+
+services:
+  # Go development container with the project code mounted
+  golang:
+    image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24
+    volumes:
+      - ..:/app # Mount the project directory into the container
+    working_dir: /app
+    command: tail -f /dev/null # Keep container running
+    networks:
+      home-ip-updater-net:
+        ipv4_address: 172.17.0.10
+
+# Custom network configuration for service communication
+networks:
+  home-ip-updater-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.17.0.0/16 # Private subnet for service communication

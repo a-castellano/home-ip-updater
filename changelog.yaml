@@ -1,3 +1,13 @@
+- semver: 0.0.3
+  date: 2025-08-08T20:30:00+01:00
+  packager: Álvaro Castellano Vela <alvaro.castellano.vela@gmail>
+  changes:
+    - note: |-
+        Remove PowerDNS integration
+        Update to go 1.24
+      author:
+        name: Álvaro Castellano Vela
+        email: alvaro@windmaker.net
 - semver: 0.0.2
   date: 2025-01-02T15:19:00+01:00
   packager: Álvaro Castellano Vela <alvaro.castellano.vela@gmail>
@@ -6,7 +16,7 @@
         Updates PowerDNS required record too
       author:
         name: Álvaro Castellano Vela
-        email: alvaro.castellano.vela@gmail.com
+        email: alvaro@windmaker.net
 - semver: 0.0.1
   date: 2024-07-18T23:03:00+02:00
   packager: Álvaro Castellano Vela <alvaro.castellano.vela@gmail>
@@ -15,4 +25,4 @@
         First release
       author:
         name: Álvaro Castellano Vela
-        email: alvaro.castellano.vela@gmail.com
+        email: alvaro@windmaker.net
