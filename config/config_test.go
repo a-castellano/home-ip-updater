@@ -1,5 +1,7 @@
 //go:build integration_tests || unit_tests
 
+// Package config_test provides comprehensive testing for the config package.
+// It includes unit tests for environment variable validation and configuration loading.
 package config
 
 import (
@@ -7,6 +9,8 @@ import (
 	"testing"
 )
 
+// Global variables to store original environment variable values
+// These are used to restore the environment state after tests
 var currentAWSAccessKey string
 var currentAWSAccessKeyDefined bool
 
@@ -31,20 +35,12 @@ var currentRabbitmqUserDefined bool
 var currentRabbitmqPassword string
 var currentRabbitmqPasswordDefined bool
 
-var currentPowerDNSHost string
-var currentPowerDNSHostDefined bool
-
-var currentPowerDNSPort string
-var currentPowerDNSPortDefined bool
-
-var currentPowerDNSAPIKey string
-var currentPowerDNSAPIKeyDefined bool
-
-var currentPowerDNSZoneName string
-var currentPowerDNSZoneNameDefined bool
-
+// setUp saves the current environment variables and clears them for testing.
+// This ensures that tests start with a clean environment and can properly
+// test the validation logic without interference from existing environment variables.
 func setUp() {
 
+	// Save AWS credentials if they exist
 	if envAWSAccessKey, found := os.LookupEnv("AWS_ACCESS_KEY_ID"); found {
 		currentAWSAccessKey = envAWSAccessKey
 		currentAWSAccessKeyDefined = true
@@ -59,6 +55,7 @@ func setUp() {
 		currentAWSSecretKeyDefined = false
 	}
 
+	// Save AWS zone ID if it exists
 	if envAWSZoneId, found := os.LookupEnv("AWS_ZONE_ID"); found {
 		currentAWSZoneId = envAWSZoneId
 		currentAWSZoneIdDefined = true
@@ -66,6 +63,7 @@ func setUp() {
 		currentAWSZoneIdDefined = false
 	}
 
+	// Save subdomain if it exists
 	if envSubdomain, found := os.LookupEnv("SUBDOMAIN"); found {
 		currentSubdomain = envSubdomain
 		currentSubdomainDefined = true
@@ -73,34 +71,7 @@ func setUp() {
 		currentSubdomainDefined = false
 	}
 
-	if envPowerDNSAPIHost, found := os.LookupEnv("POWER_DNS_API_HOST"); found {
-		currentPowerDNSHost = envPowerDNSAPIHost
-		currentPowerDNSHostDefined = true
-	} else {
-		currentPowerDNSHostDefined = false
-	}
-
-	if envPowerDNSAPIPort, found := os.LookupEnv("POWER_DNS_API_PORT"); found {
-		currentPowerDNSPort = envPowerDNSAPIPort
-		currentPowerDNSPortDefined = true
-	} else {
-		currentPowerDNSPortDefined = false
-	}
-
-	if envPowerDNSAPIKey, found := os.LookupEnv("POWER_DNS_API_KEY"); found {
-		currentPowerDNSAPIKey = envPowerDNSAPIKey
-		currentPowerDNSAPIKeyDefined = true
-	} else {
-		currentPowerDNSAPIKeyDefined = false
-	}
-
-	if envPowerDNSZoneName, found := os.LookupEnv("POWER_DNS_ZONE_NAME"); found {
-		currentPowerDNSZoneName = envPowerDNSZoneName
-		currentPowerDNSZoneNameDefined = true
-	} else {
-		currentPowerDNSZoneNameDefined = false
-	}
-
+	// Clear all environment variables to ensure clean test state
 	os.Unsetenv("AWS_ACCESS_KEY_ID")
 	os.Unsetenv("AWS_SECRET_ACCESS_KEY")
 	os.Unsetenv("AWS_ZONE_ID")
@@ -111,14 +82,14 @@ func setUp() {
 	os.Unsetenv("RABBITMQ_DATABASE")
 	os.Unsetenv("RABBITMQ_PASSWORD")
 
-	os.Unsetenv("POWER_DNS_API_HOST")
-	os.Unsetenv("POWER_DNS_API_PORT")
-	os.Unsetenv("POWER_DNS_API_KEY")
-	os.Unsetenv("POWER_DNS_ZONE_NAME")
 }
 
+// teardown restores the original environment variables after each test.
+// This ensures that tests don't affect each other and the environment
+// is returned to its original state.
 func teardown() {
 
+	// Restore AWS credentials if they existed before
 	if currentAWSAccessKeyDefined {
 		os.Setenv("AWS_ACCESS_KEY_ID", currentAWSAccessKey)
 	} else {
@@ -137,6 +108,7 @@ func teardown() {
 		os.Unsetenv("AWS_ZONE_ID")
 	}
 
+	// Restore RabbitMQ configuration if it existed before
 	if currentRabbitmqHostDefined {
 		os.Setenv("RABBITMQ_HOST", currentRabbitmqHost)
 	} else {
@@ -161,31 +133,11 @@ func teardown() {
 		os.Unsetenv("RABBITMQ_PASSWORD")
 	}
 
-	if currentPowerDNSHostDefined {
-		os.Setenv("POWER_DNS_API_HOST", currentPowerDNSHost)
-	} else {
-		os.Unsetenv("POWER_DNS_API_HOST")
-	}
-
-	if currentPowerDNSPortDefined {
-		os.Setenv("POWER_DNS_API_PORT", currentPowerDNSPort)
-	} else {
-		os.Unsetenv("POWER_DNS_API_PORT")
-	}
-
-	if currentPowerDNSAPIKeyDefined {
-		os.Setenv("POWER_DNS_API_KEY", currentPowerDNSAPIKey)
-	} else {
-		os.Unsetenv("POWER_DNS_API_KEY")
-	}
-
-	if currentPowerDNSZoneNameDefined {
-		os.Setenv("POWER_DNS_ZONE_NAME", currentPowerDNSZoneName)
-	} else {
-		os.Unsetenv("POWER_DNS_ZONE_NAME")
-	}
 }
 
+// TestConfigWithoutEnvVariables verifies that NewConfig returns an error
+// when no environment variables are set. This tests the basic validation
+// that ensures required configuration is present.
 func TestConfigWithoutEnvVariables(t *testing.T) {
 
 	setUp()
@@ -203,6 +155,8 @@ func TestConfigWithoutEnvVariables(t *testing.T) {
 
 }
 
+// TestConfigWithoutSecretKeyVariable verifies that NewConfig returns an error
+// when AWS_SECRET_ACCESS_KEY is missing, even if other variables are set.
 func TestConfigWithoutSecretKeyVariable(t *testing.T) {
 
 	setUp()
@@ -222,6 +176,8 @@ func TestConfigWithoutSecretKeyVariable(t *testing.T) {
 
 }
 
+// TestConfigWithoutZoneIdVariable verifies that NewConfig returns an error
+// when AWS_ZONE_ID is missing, even if AWS credentials are set.
 func TestConfigWithoutZoneIdVariable(t *testing.T) {
 
 	setUp()
@@ -229,10 +185,6 @@ func TestConfigWithoutZoneIdVariable(t *testing.T) {
 
 	os.Setenv("AWS_ACCESS_KEY_ID", "test")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
-	os.Setenv("POWER_DNS_API_HOST", "host")
-	os.Setenv("POWER_DNS_API_PORT", "8080")
-	os.Setenv("POWER_DNS_API_KEY", "key")
-	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
 
 	_, err := NewConfig()
 
@@ -246,6 +198,8 @@ func TestConfigWithoutZoneIdVariable(t *testing.T) {
 
 }
 
+// TestConfigWithoutSubdomainVariable verifies that NewConfig returns an error
+// when SUBDOMAIN is missing, even if AWS credentials and zone ID are set.
 func TestConfigWithoutSubdomainVariable(t *testing.T) {
 
 	setUp()
@@ -254,10 +208,6 @@ func TestConfigWithoutSubdomainVariable(t *testing.T) {
 	os.Setenv("AWS_ACCESS_KEY_ID", "test")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
 	os.Setenv("AWS_ZONE_ID", "123")
-	os.Setenv("POWER_DNS_API_HOST", "host")
-	os.Setenv("POWER_DNS_API_PORT", "8080")
-	os.Setenv("POWER_DNS_API_KEY", "key")
-	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
 
 	_, err := NewConfig()
 
@@ -271,6 +221,8 @@ func TestConfigWithoutSubdomainVariable(t *testing.T) {
 
 }
 
+// TestConfigWithRabbitmqInvalidPort verifies that NewConfig returns an error
+// when RabbitMQ port is set to an invalid value.
 func TestConfigWithRabbitmqInvalidPort(t *testing.T) {
 
 	setUp()
@@ -281,7 +233,6 @@ func TestConfigWithRabbitmqInvalidPort(t *testing.T) {
 	os.Setenv("AWS_ZONE_ID", "123")
 	os.Setenv("SUBDOMAIN", "test.windmaker.net")
 	os.Setenv("RABBITMQ_PORT", "invalidport")
-	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
 
 	_, err := NewConfig()
 
@@ -291,89 +242,8 @@ func TestConfigWithRabbitmqInvalidPort(t *testing.T) {
 
 }
 
-func TestConfigWithoutPowerDNSAPIHost(t *testing.T) {
-
-	setUp()
-	defer teardown()
-
-	os.Setenv("AWS_ACCESS_KEY_ID", "test")
-	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
-	os.Setenv("AWS_ZONE_ID", "123")
-	os.Setenv("SUBDOMAIN", "test.windmaker.net")
-	os.Setenv("POWER_DNS_API_PORT", "8080")
-	os.Setenv("POWER_DNS_API_KEY", "key")
-	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
-
-	_, err := NewConfig()
-
-	if err == nil {
-		t.Errorf("TestConfigWithoutPowerDNSAPIHost should fail.")
-	}
-
-}
-
-func TestConfigWithoutPowerDNSAPIPort(t *testing.T) {
-
-	setUp()
-	defer teardown()
-
-	os.Setenv("AWS_ACCESS_KEY_ID", "test")
-	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
-	os.Setenv("AWS_ZONE_ID", "123")
-	os.Setenv("SUBDOMAIN", "test.windmaker.net")
-	os.Setenv("POWER_DNS_API_HOST", "host")
-	os.Setenv("POWER_DNS_API_KEY", "key")
-	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
-
-	_, err := NewConfig()
-
-	if err == nil {
-		t.Errorf("TestConfigWithoutPowerDNSAPIPort should fail.")
-	}
-
-}
-
-func TestConfigWithoutPowerDNSAPIKey(t *testing.T) {
-
-	setUp()
-	defer teardown()
-
-	os.Setenv("AWS_ACCESS_KEY_ID", "test")
-	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
-	os.Setenv("AWS_ZONE_ID", "123")
-	os.Setenv("SUBDOMAIN", "test.windmaker.net")
-	os.Setenv("POWER_DNS_API_HOST", "host")
-	os.Setenv("POWER_DNS_API_PORT", "8080")
-	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
-
-	_, err := NewConfig()
-
-	if err == nil {
-		t.Errorf("TestConfigWithoutPowerDNSAPIKey should fail.")
-	}
-
-}
-
-func TestConfigWithoutPowerDNSZoneName(t *testing.T) {
-
-	setUp()
-	defer teardown()
-
-	os.Setenv("AWS_ACCESS_KEY_ID", "test")
-	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
-	os.Setenv("AWS_ZONE_ID", "123")
-	os.Setenv("SUBDOMAIN", "test.windmaker.net")
-	os.Setenv("POWER_DNS_API_HOST", "host")
-	os.Setenv("POWER_DNS_API_PORT", "8080")
-
-	_, err := NewConfig()
-
-	if err == nil {
-		t.Errorf("TestConfigWithoutPowerDNSAPIKey should fail.")
-	}
-
-}
-
+// TestValidConfig verifies that NewConfig succeeds when all required
+// environment variables are properly set. This is the happy path test.
 func TestValidConfig(t *testing.T) {
 
 	setUp()
@@ -383,10 +253,6 @@ func TestValidConfig(t *testing.T) {
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
 	os.Setenv("AWS_ZONE_ID", "123")
 	os.Setenv("SUBDOMAIN", "test.windmaker.net")
-	os.Setenv("POWER_DNS_API_HOST", "host")
-	os.Setenv("POWER_DNS_API_PORT", "8080")
-	os.Setenv("POWER_DNS_API_KEY", "key")
-	os.Setenv("POWER_DNS_ZONE_NAME", "test.net")
 
 	_, err := NewConfig()
 
