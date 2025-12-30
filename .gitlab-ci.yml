@@ -1,4 +1,4 @@
-image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24:202508080558
+image: limani.windmaker.net/limani/base_golang_1_24:202512131754
 
 stages:
   - lint
@@ -135,7 +135,7 @@ sonarqube-vulnerability-report:
 
 pages:
   stage: deploy
-  image: registry.windmaker.net:5005/a-castellano/limani/base:202508080558
+  image: limani.windmaker.net/limani/base:202512131754
   script:
     - mkdir -p public
     - cp coverage.html public/
@@ -151,6 +151,10 @@ pages:
 
 build_package:
   stage: build
+  before_script:
+    - export CC=/usr/bin/clang
+    - export GOOS=linux
+    - export GOARCH=arm64
   script:
     - make build
     - nfpm package --packager archlinux
