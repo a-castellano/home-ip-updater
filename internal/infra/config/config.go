@@ -8,11 +8,9 @@ import (
 	"errors"
 	"os"
 
-	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
+	rabbitmqconfig "github.com/a-castellano/go-types/types/rabbitmq"
 )
 
-// Config contains all configuration variables required by the home-ip-updater service.
-// It includes settings for AWS Route53, RabbitMQ, and domain configuration.
 type Config struct {
 	AWSZoneID      string                 // AWS Route53 hosted zone ID for DNS updates
 	Subdomain      string                 // Subdomain to update with new IP addresses

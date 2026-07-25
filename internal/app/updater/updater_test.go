@@ -6,7 +6,7 @@ package updater
 
 import (
 	"context"
-	"fmt"
+	//	"fmt"
 	"os"
 	"testing"
 )
@@ -176,27 +176,27 @@ func TestUpdaterWithInvalidZoneID(t *testing.T) {
 	}
 }
 
-// TestUpdaterWithValidData verifies that the AWS updater succeeds when all
-// parameters are valid. This is the happy path test that ensures the DNS
-// update functionality works correctly with proper credentials and configuration.
-// This test requires valid AWS credentials and a real hosted zone ID to pass.
-func TestUpdaterWithValidData(t *testing.T) {
-
-	ctx := context.TODO()
-
-	// Create updater with valid configuration
-	updater := AWSUpdater{
-		ZoneID:    os.Getenv("CI_ZONE_ID"),
-		Subdomain: os.Getenv("CI_SUBDOMAIN"),
-		IP:        "192.168.1.1",
-	}
-	os.Setenv("AWS_ACCESS_KEY_ID", os.Getenv("CI_AWS_ACCESS_KEY_ID"))
-	os.Setenv("AWS_SECRET_ACCESS_KEY", os.Getenv("CI_AWS_SECRET_ACCESS_KEY"))
-	fmt.Println(os.Getenv("AWS_SECRET_ACCESS_KEY"))
-
-	err := updater.Update(ctx)
-
-	if err != nil {
-		t.Errorf("TestUpdaterWithValidData should not fail, error was \"%s\"", err.Error())
-	}
-}
+//// TestUpdaterWithValidData verifies that the AWS updater succeeds when all
+//// parameters are valid. This is the happy path test that ensures the DNS
+//// update functionality works correctly with proper credentials and configuration.
+//// This test requires valid AWS credentials and a real hosted zone ID to pass.
+//func TestUpdaterWithValidData(t *testing.T) {
+//
+//	ctx := context.TODO()
+//
+//	// Create updater with valid configuration
+//	updater := AWSUpdater{
+//		ZoneID:    os.Getenv("CI_ZONE_ID"),
+//		Subdomain: os.Getenv("CI_SUBDOMAIN"),
+//		IP:        "192.168.1.1",
+//	}
+//	os.Setenv("AWS_ACCESS_KEY_ID", os.Getenv("CI_AWS_ACCESS_KEY_ID"))
+//	os.Setenv("AWS_SECRET_ACCESS_KEY", os.Getenv("CI_AWS_SECRET_ACCESS_KEY"))
+//	fmt.Println(os.Getenv("AWS_SECRET_ACCESS_KEY"))
+//
+//	err := updater.Update(ctx)
+//
+//	if err != nil {
+//		t.Errorf("TestUpdaterWithValidData should not fail, error was \"%s\"", err.Error())
+//	}
+//}

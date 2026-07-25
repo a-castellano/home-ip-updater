@@ -1,12 +1,10 @@
 module github.com/a-castellano/home-ip-updater
 
-go 1.24
-
-toolchain go1.24.5
+go 1.26
 
 require (
-	github.com/a-castellano/go-services v0.0.6
-	github.com/a-castellano/go-types v0.0.3
+	github.com/a-castellano/go-services v0.0.15
+	github.com/a-castellano/go-types v0.0.16
 	github.com/aws/aws-sdk-go-v2 v1.43.0
 	github.com/aws/aws-sdk-go-v2/config v1.32.31
 	github.com/aws/aws-sdk-go-v2/service/route53 v1.65.2
