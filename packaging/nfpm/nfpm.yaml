@@ -5,8 +5,8 @@ version: "v0.0.3"
 section: "default"
 priority: "extra"
 provides:
-  - secutiycambot
-maintainer: "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>"
+  - windmaker-home-ip-updater
+maintainer: "Álvaro Castellano Vela <alvaro@windmaker.net>"
 description: |
   This program updates home domain IP
 vendor: "Windmaker"
@@ -14,13 +14,13 @@ homepage: "https://git.windmaker.net/a-castellano/home-ip-updater"
 license: "GPLV3"
 changelog: "changelog.yaml"
 contents:
-  - src: ./home-ip-updater
+  - src: ../../home-ip-updater
     dst: /usr/local/bin/windmaker-home-ip-updater
-  - src: ./packaging/deb/default/windmaker-home-ip-updater
+  - src: ../deb/default/windmaker-home-ip-updater
     dst: /etc/default/windmaker-home-ip-updater-example
-  - src: ./packaging/deb/systemd/windmaker-home-ip-updater.service
+  - src: ../deb/systemd/windmaker-home-ip-updater.service
     dst: /usr/lib/systemd/system/windmaker-home-ip-updater.service
 overrides:
   deb:
     scripts:
-      postinstall: ./packaging/deb/scripts/postinstall.sh
+      postinstall: ../deb/scripts/postinstall.sh

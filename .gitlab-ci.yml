@@ -1,4 +1,4 @@
-image: limani.windmaker.net/limani/base_golang_1_24:202512131754
+image: harbor.windmaker.net/limani/base_golang_1_26
 
 stages:
   - lint
@@ -98,7 +98,7 @@ sonarqube-check:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar" # Defines the location of the analysis task cache
     GIT_DEPTH: "0" # Tells git to fetch all the branches of the project, required by the analysis task
   script:
-    - sonar-scanner -Dsonar.host.url="${SONAR_HOST_URL}"
+    - sonar-scanner -Dproject.settings=development/sonar-project.properties -Dsonar.host.url="${SONAR_HOST_URL}"
   allow_failure: true
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
@@ -135,7 +135,7 @@ sonarqube-vulnerability-report:
 
 pages:
   stage: deploy
-  image: limani.windmaker.net/limani/base:202512131754
+  image: harbor.windmaker.net/limani/base
   script:
     - mkdir -p public
     - cp coverage.html public/
@@ -157,9 +157,9 @@ build_package:
     - export GOARCH=arm64
   script:
     - make build
-    - nfpm package --packager archlinux
+    - cd packaging/nfpm && nfpm package --packager archlinux && cd ../..
     - mkdir arch_package
-    - mv *.pkg.tar.zst arch_package/
+    - mv packaging/nfpm/*.pkg.tar.zst arch_package/
   dependencies:
     - coverage
   artifacts:
