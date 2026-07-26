@@ -8,8 +8,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	appconfig "github.com/a-castellano/home-ip-updater/internal/infra/config"
 )
 
 // envVariable holds the state of a single environment variable while the
@@ -82,14 +80,9 @@ func TestUpdaterWithoutEnvVariables(t *testing.T) {
 	setUp()
 	defer teardown()
 
-	config := appconfig.Config{
-		AWSZoneID: "invalid",
-		Subdomain: "invalid",
-	}
-
 	ctx := context.Background()
 
-	_, err := NewRoute53Updater(ctx, &config)
+	_, err := NewRoute53Updater(ctx, "invalidzone", "invalidsubdomain")
 
 	if err == nil {
 		t.Fatalf("TestUpdaterWithoutEnvVariables should fail.")
@@ -109,14 +102,9 @@ func TestUpdaterWithInvalidVariables(t *testing.T) {
 	os.Setenv("AWS_ACCESS_KEY_ID", "test")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "test")
 
-	config := appconfig.Config{
-		AWSZoneID: "invalid",
-		Subdomain: "invalid",
-	}
-
 	ctx := context.Background()
 
-	_, err := NewRoute53Updater(ctx, &config)
+	_, err := NewRoute53Updater(ctx, "invalidzone", "invalidsubdomain")
 
 	if err == nil {
 		t.Fatalf("TestUpdaterWithInvalidVariables should fail.")
@@ -147,14 +135,9 @@ func TestUpdaterWithValidVariables(t *testing.T) {
 	os.Setenv("AWS_ACCESS_KEY_ID", secrets.AWSAccessKeyId)
 	os.Setenv("AWS_SECRET_ACCESS_KEY", secrets.AWSSecretAccessKey)
 
-	config := appconfig.Config{
-		AWSZoneID: secrets.AWSZoneID,
-		Subdomain: secrets.Subdomain,
-	}
-
 	ctx := context.Background()
 
-	updater, err := NewRoute53Updater(ctx, &config)
+	updater, err := NewRoute53Updater(ctx, secrets.AWSZoneID, secrets.Subdomain)
 
 	if err != nil {
 		t.Fatalf("TestUpdaterWithValidVariables should not fail, error was \"%s\"", err.Error())

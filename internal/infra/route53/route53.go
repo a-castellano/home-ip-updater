@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	appconfig "github.com/a-castellano/home-ip-updater/internal/infra/config"
 	aws "github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -87,15 +86,15 @@ func (updater *Route53Updater) UpdateRecord(ctx context.Context, value string) e
 	return updater.updateRoute53Record(ctx, r53types.RRTypeA, value)
 }
 
-func NewRoute53Updater(ctx context.Context, appConfig *appconfig.Config) (*Route53Updater, error) {
+func NewRoute53Updater(ctx context.Context, zoneID string, subdomain string) (*Route53Updater, error) {
 
 	var updater Route53Updater
 
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "NewRoute53Updater",
 		trace.WithSpanKind(trace.SpanKindInternal),
 		trace.WithAttributes(
-			attribute.String("aws.route53.hosted_zone.id", appConfig.AWSZoneID),
-			attribute.String("dns.record.name", appConfig.Subdomain),
+			attribute.String("aws.route53.hosted_zone.id", zoneID),
+			attribute.String("dns.record.name", subdomain),
 			attribute.String("aws.region", awsRegion),
 		))
 	defer span.End()
@@ -103,8 +102,8 @@ func NewRoute53Updater(ctx context.Context, appConfig *appconfig.Config) (*Route
 	log := logger.FromContext(ctx).With("operation", "NewRoute53Updater")
 	log.InfoContext(ctx, "setting up new route53 updater")
 
-	updater.zoneID = appConfig.AWSZoneID
-	updater.record = appConfig.Subdomain
+	updater.zoneID = zoneID
+	updater.record = subdomain
 
 	log.DebugContext(ctx, "loading AWS config")
 	awscfg, err := awsconfig.LoadDefaultConfig(ctx,
