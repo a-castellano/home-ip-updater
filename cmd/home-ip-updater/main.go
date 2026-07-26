@@ -5,7 +5,7 @@
 package main
 
 import (
-	//"context"
+	"context"
 	"log"
 	"log/syslog"
 	"os"
@@ -33,10 +33,11 @@ func main() {
 
 	log.Print("Loading configuration from environment variables")
 
+	ctx := context.Background()
 	// Load application configuration from environment variables
 	// This validates all required AWS, RabbitMQ, and domain settings
 	//appConfig, configErr := config.NewConfig()
-	_, configErr := config.NewConfig()
+	_, configErr := config.NewConfig(ctx)
 
 	if configErr != nil {
 		log.Print(configErr.Error())

@@ -5,6 +5,7 @@
 package config
 
 import (
+	"context"
 	"os"
 	"testing"
 )
@@ -84,7 +85,8 @@ func TestConfigWithoutEnvVariables(t *testing.T) {
 	setUp()
 	defer teardown()
 
-	_, err := NewConfig()
+	ctx := context.Background()
+	_, err := NewConfig(ctx)
 
 	if err == nil {
 		t.Errorf("TestConfigWithoutEnvVariables should fail.")
@@ -105,7 +107,8 @@ func TestConfigWithoutSecretKeyVariable(t *testing.T) {
 
 	os.Setenv("AWS_ACCESS_KEY_ID", "test")
 
-	_, err := NewConfig()
+	ctx := context.Background()
+	_, err := NewConfig(ctx)
 
 	if err == nil {
 		t.Errorf("TestConfigWithoutEnvVariables should fail.")
@@ -127,7 +130,8 @@ func TestConfigWithoutZoneIdVariable(t *testing.T) {
 	os.Setenv("AWS_ACCESS_KEY_ID", "test")
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
 
-	_, err := NewConfig()
+	ctx := context.Background()
+	_, err := NewConfig(ctx)
 
 	if err == nil {
 		t.Errorf("TestConfigWithoutZoneIdVariable should fail.")
@@ -150,7 +154,8 @@ func TestConfigWithoutSubdomainVariable(t *testing.T) {
 	os.Setenv("AWS_SECRET_ACCESS_KEY", "secret")
 	os.Setenv("AWS_ZONE_ID", "123")
 
-	_, err := NewConfig()
+	ctx := context.Background()
+	_, err := NewConfig(ctx)
 
 	if err == nil {
 		t.Errorf("TestConfigWithoutSubdomainVariable should fail.")
@@ -175,7 +180,8 @@ func TestConfigWithRabbitmqInvalidPort(t *testing.T) {
 	os.Setenv("SUBDOMAIN", "test.windmaker.net")
 	os.Setenv("RABBITMQ_PORT", "invalidport")
 
-	_, err := NewConfig()
+	ctx := context.Background()
+	_, err := NewConfig(ctx)
 
 	if err == nil {
 		t.Errorf("TestConfigWithRabbitmqInvalidPort should fail.")
@@ -195,10 +201,11 @@ func TestValidConfig(t *testing.T) {
 	os.Setenv("AWS_ZONE_ID", "123")
 	os.Setenv("SUBDOMAIN", "test.windmaker.net")
 
-	_, err := NewConfig()
+	ctx := context.Background()
+	_, err := NewConfig(ctx)
 
 	if err != nil {
-		t.Errorf("TestConfigWithRabbitmqInvalidPort should not fail.")
+		t.Errorf("TestValidConfig should not fail.")
 	}
 
 }

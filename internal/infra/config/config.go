@@ -5,9 +5,11 @@ package config
 
 import (
 	"cmp"
+	"context"
 	"errors"
 	"os"
 
+	logger "github.com/a-castellano/go-services/infra/logger"
 	rabbitmqconfig "github.com/a-castellano/go-types/types/rabbitmq"
 )
 
@@ -30,7 +32,10 @@ type Config struct {
 //
 // Optional environment variables:
 //   - UPDATE_QUEUE_NAME: RabbitMQ queue name (defaults to "home-ip-monitor-updates")
-func NewConfig() (*Config, error) {
+func NewConfig(ctx context.Context) (*Config, error) {
+
+	log := logger.FromContext(ctx).With("operation", "NewConfig")
+
 	config := Config{}
 
 	var envVariableFound bool
@@ -46,15 +51,18 @@ func NewConfig() (*Config, error) {
 
 	// Set RabbitMQ queue name with default value
 	config.UpdateQueue = cmp.Or(os.Getenv("UPDATE_QUEUE_NAME"), "home-ip-monitor-updates")
+	log.DebugContext(ctx, "update queue name set", "queue_name", config.UpdateQueue)
 
 	// Validate AWS Route53 configuration
 	if config.AWSZoneID, envVariableFound = os.LookupEnv("AWS_ZONE_ID"); !envVariableFound {
 		return nil, errors.New("AWS_ZONE_ID env variable must be set")
 	}
+	log.DebugContext(ctx, "AWS zone ID configured", "zone_id", config.AWSZoneID)
 
 	if config.Subdomain, envVariableFound = os.LookupEnv("SUBDOMAIN"); !envVariableFound {
 		return nil, errors.New("SUBDOMAIN env variable must be set")
 	}
+	log.DebugContext(ctx, "subdomain configured", "subdomain", config.Subdomain)
 
 	// Load RabbitMQ configuration from environment variables
 	var rabbitmqConfigErr error
@@ -62,6 +70,8 @@ func NewConfig() (*Config, error) {
 	if rabbitmqConfigErr != nil {
 		return nil, rabbitmqConfigErr
 	}
+	log.DebugContext(ctx, "rabbitmq config set", "rabbitmq config", config.RabbitmqConfig)
 
+	log.InfoContext(ctx, "configuration set successful")
 	return &config, nil
 }
