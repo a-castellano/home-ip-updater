@@ -43,6 +43,7 @@ integration_tests:
   stage: integration_tests
   before_script:
     - export CC=/usr/bin/clang
+    - echo "$GIT_CRYPT_KEY_B64" | base64 -d | git-crypt unlock -
     - *install_mod
   script:
     - make test_integration
@@ -57,6 +58,7 @@ coverage:
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
   before_script:
     - export CC=/usr/bin/clang
+    - echo "$GIT_CRYPT_KEY_B64" | base64 -d | git-crypt unlock -
     - *install_mod
   script:
     - make coverage
