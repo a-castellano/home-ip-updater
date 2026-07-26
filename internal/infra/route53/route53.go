@@ -76,6 +76,10 @@ func (updater *Route53Updater) updateRoute53Record(ctx context.Context, recordTy
 	return nil
 }
 
+func (updater *Route53Updater) UpdateRecord(ctx context.Context, value string) error {
+	return updater.updateRoute53Record(ctx, r53types.RRTypeA, value)
+}
+
 func NewRoute53Updater(ctx context.Context, appConfig *appconfig.Config) (*Route53Updater, error) {
 
 	var updater Route53Updater

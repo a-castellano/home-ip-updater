@@ -154,9 +154,15 @@ func TestUpdaterWithValidVariables(t *testing.T) {
 
 	ctx := context.Background()
 
-	_, err := NewRoute53Updater(ctx, &config)
+	updater, err := NewRoute53Updater(ctx, &config)
 
 	if err != nil {
 		t.Fatalf("TestUpdaterWithInvalidVariables should not fail, error was \"%s\"", err.Error())
+	}
+
+	updateError := updater.UpdateRecord(ctx, "1.1.1.1")
+
+	if updateError != nil {
+		t.Fatalf("TestUpdaterWithInvalidVariables should not fail when calling to UpdateRecord, error was \"%s\"", updateError.Error())
 	}
 }

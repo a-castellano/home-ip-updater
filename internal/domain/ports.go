@@ -5,5 +5,5 @@ import (
 )
 
 type RecordUpdater interface {
-	UpdateRecord(ctx context.Context, record string, value string) error
+	UpdateRecord(ctx context.Context, value string) error
 }

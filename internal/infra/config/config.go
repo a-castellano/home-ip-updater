@@ -30,7 +30,6 @@ type Config struct {
 //
 // Optional environment variables:
 //   - UPDATE_QUEUE_NAME: RabbitMQ queue name (defaults to "home-ip-monitor-updates")
-//   - AWS_REGION: AWS region (defaults to "us-west-2")
 func NewConfig() (*Config, error) {
 	config := Config{}
 
