@@ -4,6 +4,7 @@ package route53
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"strings"
 	"testing"
@@ -69,6 +70,13 @@ func teardown() {
 
 }
 
+type Secrets struct {
+	AWSAccessKeyId     string `json:"AWS_ACCESS_KEY_ID"`
+	AWSSecretAccessKey string `json:"AWS_SECRET_ACCESS_KEY"`
+	AWSZoneID          string `json:"AWS_ZONE_ID"`
+	Subdomain          string `json:"SUBDOMAIN"`
+}
+
 func TestUpdaterWithoutEnvVariables(t *testing.T) {
 
 	setUp()
@@ -76,7 +84,6 @@ func TestUpdaterWithoutEnvVariables(t *testing.T) {
 
 	config := appconfig.Config{
 		AWSZoneID: "invalid",
-		AWSRegion: "invalid",
 		Subdomain: "invalid",
 	}
 
@@ -91,5 +98,65 @@ func TestUpdaterWithoutEnvVariables(t *testing.T) {
 	expectedError := "no EC2 IMDS role found"
 	if !strings.Contains(err.Error(), expectedError) {
 		t.Fatalf("TestUpdaterWithoutEnvVariables error should contain \"%s\", it was \"%s\"", expectedError, err.Error())
+	}
+}
+
+func TestUpdaterWithInvalidVariables(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	os.Setenv("AWS_ACCESS_KEY_ID", "test")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "test")
+
+	config := appconfig.Config{
+		AWSZoneID: "invalid",
+		Subdomain: "invalid",
+	}
+
+	ctx := context.Background()
+
+	_, err := NewRoute53Updater(ctx, &config)
+
+	if err == nil {
+		t.Fatalf("TestUpdaterWithInvalidVariables should fail.")
+	}
+
+	expectedError := "security token included in the request is invalid"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Fatalf("TestUpdaterWithInvalidVariables error should contain \"%s\", it was \"%s\"", expectedError, err.Error())
+	}
+}
+
+func TestUpdaterWithValidVariables(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	var secrets Secrets
+	scretData, readErr := os.ReadFile("../../../development/secrets.json")
+	if readErr != nil {
+		t.Fatalf("TestUpdaterWithValidVariables should not fail reading secret file, error yas \"%s\"", readErr.Error())
+	}
+
+	jsonErr := json.Unmarshal(scretData, &secrets)
+	if jsonErr != nil {
+		t.Fatalf("TestUpdaterWithValidVariables should not fail reading json file content, error yas \"%s\"", jsonErr.Error())
+	}
+
+	os.Setenv("AWS_ACCESS_KEY_ID", secrets.AWSAccessKeyId)
+	os.Setenv("AWS_SECRET_ACCESS_KEY", secrets.AWSSecretAccessKey)
+
+	config := appconfig.Config{
+		AWSZoneID: secrets.AWSZoneID,
+		Subdomain: secrets.Subdomain,
+	}
+
+	ctx := context.Background()
+
+	_, err := NewRoute53Updater(ctx, &config)
+
+	if err != nil {
+		t.Fatalf("TestUpdaterWithInvalidVariables should not fail, error was \"%s\"", err.Error())
 	}
 }

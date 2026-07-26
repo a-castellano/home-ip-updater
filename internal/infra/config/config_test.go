@@ -30,7 +30,6 @@ var envVariables = map[string]envVariable{
 	"aws_access_key": {VariableName: "AWS_ACCESS_KEY_ID"},
 	"aws_secret_key": {VariableName: "AWS_SECRET_ACCESS_KEY"},
 	"aws_zone_id":    {VariableName: "AWS_ZONE_ID"},
-	"aws_region":     {VariableName: "AWS_REGION"},
 	//rabbitmq
 	"rabbitmq_host":     {VariableName: "RABBITMQ_HOST"},
 	"rabbitmq_port":     {VariableName: "RABBITMQ_PORT"},

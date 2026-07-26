@@ -13,6 +13,7 @@ import (
 )
 
 const TXTValue = "\"home-ip-updater-validation\""
+const AWSRegion = "us-east-1"
 const tracerName = "github.com/a-castellano/home-ip-updater/internal/infra/route53"
 
 const awsRequestTimeout = 10 * time.Second
@@ -66,7 +67,7 @@ func NewRoute53Updater(ctx context.Context, appConfig *appconfig.Config) (*Route
 	updater.record = appConfig.Subdomain
 
 	awscfg, err := awsconfig.LoadDefaultConfig(ctx,
-		awsconfig.WithRegion(appConfig.AWSRegion),
+		awsconfig.WithRegion(AWSRegion),
 		awsconfig.WithHTTPClient(awshttp.NewBuildableClient().WithTimeout(awsRequestTimeout)),
 	)
 	if err != nil {
