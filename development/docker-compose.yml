@@ -15,6 +15,16 @@ services:
       home-ip-updater-net:
         ipv4_address: 172.17.0.10
 
+  # RabbitMQ server for message broker testing
+  rabbitmq:
+    image: harbor.windmaker.net/limani/base_rabbitmq_server
+    ports:
+      - "5672:5672" # AMQP protocol port
+      - "15672:15672" # RabbitMQ management interface port
+    networks:
+      home-ip-updater-net:
+        ipv4_address: 172.17.0.30
+
 # Custom network configuration for service communication
 networks:
   home-ip-updater-net:

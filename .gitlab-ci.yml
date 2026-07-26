@@ -41,6 +41,9 @@ unit_tests:
 
 integration_tests:
   stage: integration_tests
+  services:
+    - name: harbor.windmaker.net/limani/base_rabbitmq_server
+      alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
     - echo "$GIT_CRYPT_KEY_B64" | base64 -d | git-crypt unlock -
@@ -56,6 +59,9 @@ coverage:
     - if: $CI_COMMIT_BRANCH == 'main'
     - if: $CI_COMMIT_BRANCH == 'develop'
     - if: $CI_COMMIT_BRANCH =~ '/^.*all.*$/'
+  services:
+    - name: harbor.windmaker.net/limani/base_rabbitmq_server
+      alias: rabbitmq
   before_script:
     - export CC=/usr/bin/clang
     - echo "$GIT_CRYPT_KEY_B64" | base64 -d | git-crypt unlock -
