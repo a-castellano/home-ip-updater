@@ -43,7 +43,7 @@ coverhtml: ## Generate global code coverage report in HTML
 
 # Build the binary executable
 build: ## Build the binary file
-	@go build -v $(PKG)
+	@go build -v $(PKG)/cmd/$(PROJECT_NAME)
 
 # Remove previous build artifacts
 clean: ## Remove previous build

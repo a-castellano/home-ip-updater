@@ -1,120 +1,126 @@
-// Package main provides the home-ip-updater service that monitors a RabbitMQ queue
-// for IP address updates and automatically updates DNS records in AWS Route53.
-// This service is designed to work with the home-ip-monitor system to keep
-// a subdomain pointing to the current home IP address.
 package main
 
 import (
 	"context"
-	"log"
-	"log/syslog"
+	systemlog "log"
 	"os"
-	//"os/signal"
-	//"syscall"
+	"os/signal"
+	"syscall"
+	"time"
 
-	//messagebroker "github.com/a-castellano/go-services/services/messagebroker"
-	//updater "github.com/a-castellano/home-ip-updater/internal/app/updater"
+	logger "github.com/a-castellano/go-services/infra/logger"
+	opentelemetry "github.com/a-castellano/go-services/infra/opentelemetry"
+	rabbitmq "github.com/a-castellano/go-services/infra/rabbitmq"
+	messagebroker "github.com/a-castellano/go-services/services/messagebroker"
+	otelconfig "github.com/a-castellano/go-types/types/opentelemetry"
+	slogconfig "github.com/a-castellano/go-types/types/slog"
+	updater "github.com/a-castellano/home-ip-updater/internal/app/updater"
 	config "github.com/a-castellano/home-ip-updater/internal/infra/config"
+	consume "github.com/a-castellano/home-ip-updater/internal/infra/consume"
+	dns "github.com/a-castellano/home-ip-updater/internal/infra/dns"
 )
 
-// main is the entry point of the home-ip-updater service.
-// It sets up logging, configuration, message broker connection,
-// signal handling, and starts the main message processing loop.
-func main() {
+func run(ctx context.Context) error {
 
-	// Configure logger to write to syslog for system integration
-	// This allows the service to integrate with system logging infrastructure
-	logwriter, e := syslog.New(syslog.LOG_INFO, "home-ip-updater")
-	if e == nil {
-		log.SetOutput(logwriter)
-		// Remove timestamp from log messages as syslog already provides timestamps
-		log.SetFlags(0)
+	// Graceful shutdown: SIGINT/SIGTERM cancel the context
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	log := logger.FromContext(ctx).With("operation", "main.run")
+	log.DebugContext(ctx, "Loading config")
+
+	otelConfig, otelConfigErr := otelconfig.NewConfig()
+	if otelConfigErr != nil {
+		log.ErrorContext(ctx, "telemetry config has errors", "error", otelConfigErr)
+		return otelConfigErr
 	}
 
-	log.Print("Loading configuration from environment variables")
+	shutdown, err := opentelemetry.SetupOpenTelemetry(ctx, otelConfig)
+	if err != nil {
+		// Telemetry failed to start; the app keeps running without it.
+		log.ErrorContext(ctx, "telemetry setup failed", "error", err)
+	}
+	defer func() {
+		// By the time this runs the signal context is already cancelled;
+		// give the exporters their own deadline to flush pending spans.
+		shutdownCtx, cancelShutdown := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+		defer cancelShutdown()
+		if err := shutdown(shutdownCtx); err != nil {
+			log.ErrorContext(shutdownCtx, "telemetry shutdown failed", "error", err)
+		}
+	}()
 
-	ctx := context.Background()
-	// Load application configuration from environment variables
-	// This validates all required AWS, RabbitMQ, and domain settings
-	//appConfig, configErr := config.NewConfig()
-	_, configErr := config.NewConfig(ctx)
+	appConfig, configErr := config.NewConfig(ctx)
 
 	if configErr != nil {
-		log.Print(configErr.Error())
-		os.Exit(1)
+		log.ErrorContext(ctx, "error loading app config", "error", configErr)
+		return configErr
 	}
 
-	log.Print("Creating RabbitMQ client for message consumption")
+	log.InfoContext(ctx, "initiating required services")
+	log.DebugContext(ctx, "defining rabbitmq instance")
+	rabbitmqClient := rabbitmq.NewRabbitmqClient(appConfig.RabbitmqConfig)
+	log.DebugContext(ctx, "defining messagebroker instance")
+	messageBroker := messagebroker.MessageBroker{Client: rabbitmqClient}
 
-	// Create a cancellable context for graceful shutdown
-	//	ctx, cancel := context.WithCancel(context.Background())
+	messagesReceived := make(chan []byte)
+	receiveErrors := make(chan error)
 
-	// // Initialize RabbitMQ client and message broker
-	// rabbitmqClient := messagebroker.NewRabbitmqClient(appConfig.RabbitmqConfig)
-	// messageBroker := messagebroker.MessageBroker{Client: rabbitmqClient}
-	//
-	// // Create channels for message processing and error handling
-	// messagesReceived := make(chan []byte)
-	// receiveErrors := make(chan error)
-	//
-	// log.Print("Setting up OS signal handling for graceful shutdown")
-	//
-	// // Set up signal handling for graceful shutdown (SIGTERM, SIGINT)
-	// signalChannel := make(chan os.Signal, 2)
-	// signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM)
-	//
-	// // Start signal handler goroutine
-	//
-	//	go func() {
-	//		sig := <-signalChannel
-	//		switch sig {
-	//		case os.Interrupt:
-	//			log.Print("Received SIGINT, initiating graceful shutdown")
-	//			cancel()
-	//		case syscall.SIGTERM:
-	//			log.Print("Received SIGTERM, initiating graceful shutdown")
-	//			cancel()
-	//		}
-	//	}()
-	//
-	// // Start message consumer in background
-	// go messageBroker.ReceiveMessages(ctx, appConfig.UpdateQueue, messagesReceived, receiveErrors)
-	//
-	// log.Print("Starting main message processing loop")
-	//
-	// // Main processing loop - handles messages and errors
-	//
-	//	for {
-	//		select {
-	//		case receivedError := <-receiveErrors:
-	//			// Handle RabbitMQ connection or message processing errors
-	//			log.Print(receivedError.Error())
-	//			os.Exit(1)
-	//		case messageReceived := <-messagesReceived:
-	//			// Process received IP address update
-	//			ipReceived := string(messageReceived)
-	//			log.Printf("Received new IP address to update: %s", ipReceived)
-	//			log.Printf("Updating DNS record for subdomain: %s", appConfig.Subdomain)
-	//
-	//			// Create AWS updater instance with current configuration
-	//			awsUpdater := updater.AWSUpdater{
-	//				ZoneID:    appConfig.AWSZoneID,
-	//				Subdomain: appConfig.Subdomain,
-	//				IP:        ipReceived,
-	//			}
-	//
-	//			// Update DNS record in AWS Route53
-	//			updateErr := awsUpdater.Update(ctx)
-	//			if updateErr != nil {
-	//				log.Printf("Failed to update DNS record: %s", updateErr.Error())
-	//			} else {
-	//				log.Printf("Successfully updated DNS record for %s to IP %s", appConfig.Subdomain, ipReceived)
-	//			}
-	//
-	//		case <-ctx.Done():
-	//			// Handle graceful shutdown
-	//			log.Print("Shutdown signal received, terminating service")
-	//			os.Exit(0)
-	//		}
-	//	}
+	log.DebugContext(ctx, "creating Route53 updater")
+	route53Updater, newUpdaterErr := dns.NewRoute53Updater(ctx, appConfig.AWSZoneID, appConfig.Subdomain)
+	if newUpdaterErr != nil {
+		log.ErrorContext(ctx, "error creating Route53 updater", "error", newUpdaterErr)
+		return newUpdaterErr
+	}
+	log.DebugContext(ctx, "creating updater")
+	updater := updater.NewUpdater(route53Updater)
+	log.DebugContext(ctx, "creating consumer")
+	consumer := consume.NewConsumer(ctx, appConfig.UpdateQueue, updater)
+
+	go messageBroker.ReceiveMessages(ctx, appConfig.UpdateQueue, messagesReceived, receiveErrors)
+
+	log.InfoContext(ctx, "waiting for messages")
+
+	// Main message processing loop
+	for {
+		select {
+		case receivedError := <-receiveErrors:
+			// Handle RabbitMQ connection or message receiving errors
+			log.ErrorContext(ctx, receivedError.Error())
+			return receivedError
+		case messageReceived := <-messagesReceived:
+			log.InfoContext(ctx, "processing new message")
+			// Failed messages are dropped on purpose: consumption is
+			// auto-ack, so exiting would not requeue them, and the
+			// failure is already logged and recorded in the trace.
+			_ = consumer.Consume(ctx, messageReceived)
+
+		case <-ctx.Done():
+			// Graceful shutdown when context is cancelled
+			log.InfoContext(ctx, "execution finished")
+			return nil
+		}
+	}
+
+}
+
+// main only builds the logger and the root context and decides the exit
+// code; everything else happens inside run so its deferred cleanups execute
+// before the process exits (os.Exit here would skip defers placed in main).
+func main() {
+
+	// First, initiate logger
+	logConfig, err := slogconfig.NewConfig()
+	if err != nil {
+		systemlog.Fatal(err)
+	}
+
+	appLogger := logger.NewLogger(logConfig, opentelemetry.NewSlogHandler(logConfig.AppName))
+	ctx := logger.WithLogger(context.Background(), appLogger)
+
+	runErr := run(ctx)
+	if runErr != nil {
+		appLogger.ErrorContext(ctx, "home-ip-updater failed", "error", runErr)
+		os.Exit(1)
+	}
 }
