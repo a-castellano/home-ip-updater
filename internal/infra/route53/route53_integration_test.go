@@ -136,12 +136,12 @@ func TestUpdaterWithValidVariables(t *testing.T) {
 	var secrets Secrets
 	scretData, readErr := os.ReadFile("../../../development/secrets.json")
 	if readErr != nil {
-		t.Fatalf("TestUpdaterWithValidVariables should not fail reading secret file, error yas \"%s\"", readErr.Error())
+		t.Fatalf("TestUpdaterWithValidVariables should not fail reading secret file, error was \"%s\"", readErr.Error())
 	}
 
 	jsonErr := json.Unmarshal(scretData, &secrets)
 	if jsonErr != nil {
-		t.Fatalf("TestUpdaterWithValidVariables should not fail reading json file content, error yas \"%s\"", jsonErr.Error())
+		t.Fatalf("TestUpdaterWithValidVariables should not fail reading json file content, error was \"%s\"", jsonErr.Error())
 	}
 
 	os.Setenv("AWS_ACCESS_KEY_ID", secrets.AWSAccessKeyId)
@@ -157,12 +157,12 @@ func TestUpdaterWithValidVariables(t *testing.T) {
 	updater, err := NewRoute53Updater(ctx, &config)
 
 	if err != nil {
-		t.Fatalf("TestUpdaterWithInvalidVariables should not fail, error was \"%s\"", err.Error())
+		t.Fatalf("TestUpdaterWithValidVariables should not fail, error was \"%s\"", err.Error())
 	}
 
 	updateError := updater.UpdateRecord(ctx, "1.1.1.1")
 
 	if updateError != nil {
-		t.Fatalf("TestUpdaterWithInvalidVariables should not fail when calling to UpdateRecord, error was \"%s\"", updateError.Error())
+		t.Fatalf("TestUpdaterWithValidVariables should not fail when calling to UpdateRecord, error was \"%s\"", updateError.Error())
 	}
 }

@@ -13,12 +13,13 @@ import (
 
 	logger "github.com/a-castellano/go-services/infra/logger"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
-const TXTValue = "\"home-ip-updater-validation\""
-const AWSRegion = "us-east-1"
+const txtValue = "\"home-ip-updater-validation\""
+const awsRegion = "us-east-1"
 const tracerName = "github.com/a-castellano/home-ip-updater/internal/infra/route53"
 
 const awsRequestTimeout = 10 * time.Second
@@ -32,7 +33,13 @@ type Route53Updater struct {
 func (updater *Route53Updater) updateRoute53Record(ctx context.Context, recordType r53types.RRType, value string) error {
 
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "updateRoute53Record",
-		trace.WithSpanKind(trace.SpanKindInternal))
+		trace.WithSpanKind(trace.SpanKindInternal),
+		trace.WithAttributes(
+			attribute.String("aws.route53.hosted_zone.id", updater.zoneID),
+			attribute.String("dns.record.name", updater.record),
+			attribute.String("dns.record.type", string(recordType)),
+			attribute.String("dns.record.value", value),
+		))
 	defer span.End()
 
 	log := logger.FromContext(ctx).With("operation", "updateRoute53Record")
@@ -65,7 +72,7 @@ func (updater *Route53Updater) updateRoute53Record(ctx context.Context, recordTy
 	_, errChange := updater.client.ChangeResourceRecordSets(ctx, input)
 
 	if errChange != nil {
-		errorMessage := "an error hapended during route 53 record update"
+		errorMessage := "an error happened during Route53 record update"
 		span.RecordError(errChange)
 		span.SetStatus(codes.Error, errorMessage)
 		log.ErrorContext(ctx, errorMessage, "error", errChange, "recordType", recordType, "value", value)
@@ -85,7 +92,12 @@ func NewRoute53Updater(ctx context.Context, appConfig *appconfig.Config) (*Route
 	var updater Route53Updater
 
 	ctx, span := otel.Tracer(tracerName).Start(ctx, "NewRoute53Updater",
-		trace.WithSpanKind(trace.SpanKindInternal))
+		trace.WithSpanKind(trace.SpanKindInternal),
+		trace.WithAttributes(
+			attribute.String("aws.route53.hosted_zone.id", appConfig.AWSZoneID),
+			attribute.String("dns.record.name", appConfig.Subdomain),
+			attribute.String("aws.region", awsRegion),
+		))
 	defer span.End()
 
 	log := logger.FromContext(ctx).With("operation", "NewRoute53Updater")
@@ -96,30 +108,30 @@ func NewRoute53Updater(ctx context.Context, appConfig *appconfig.Config) (*Route
 
 	log.DebugContext(ctx, "loading AWS config")
 	awscfg, err := awsconfig.LoadDefaultConfig(ctx,
-		awsconfig.WithRegion(AWSRegion),
+		awsconfig.WithRegion(awsRegion),
 		awsconfig.WithHTTPClient(awshttp.NewBuildableClient().WithTimeout(awsRequestTimeout)),
 	)
 	if err != nil {
-		errorMessage := "an error hapended during aws config generation"
+		errorMessage := "an error happened during AWS config generation"
 		span.RecordError(err)
 		span.SetStatus(codes.Error, errorMessage)
 		log.ErrorContext(ctx, errorMessage, "error", err)
 		return nil, err
 	}
 
-	log.DebugContext(ctx, "creatig route53 client")
+	log.DebugContext(ctx, "creating Route53 client")
 	updater.client = route53.NewFromConfig(awscfg)
 
-	log.DebugContext(ctx, "validating route53 client, updating TXT domain")
+	log.DebugContext(ctx, "validating Route53 client, updating TXT domain")
 	//Check client updating TXT record
-	updateErr := updater.updateRoute53Record(ctx, r53types.RRTypeTxt, TXTValue)
+	updateErr := updater.updateRoute53Record(ctx, r53types.RRTypeTxt, txtValue)
 
 	if updateErr != nil {
 		errorMessage := "cannot update TXT record using current configuration"
 		// Status only: the error event and the log are already
 		// recorded closest to the point of error
 		span.SetStatus(codes.Error, errorMessage)
-		log.ErrorContext(ctx, errorMessage, "error", errorMessage)
+		log.ErrorContext(ctx, errorMessage, "error", updateErr)
 		return nil, updateErr
 	}
 
