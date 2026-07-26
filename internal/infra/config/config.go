@@ -12,7 +12,8 @@ import (
 )
 
 type Config struct {
-	AWSZoneID      string                 // AWS Route53 hosted zone ID for DNS updates
+	AWSZoneID      string // AWS Route53 hosted zone ID for DNS updates
+	AWSRegion      string
 	Subdomain      string                 // Subdomain to update with new IP addresses
 	UpdateQueue    string                 // RabbitMQ queue name for receiving IP updates
 	RabbitmqConfig *rabbitmqconfig.Config // RabbitMQ connection configuration
@@ -48,9 +49,8 @@ func NewConfig() (*Config, error) {
 	// Set RabbitMQ queue name with default value
 	config.UpdateQueue = cmp.Or(os.Getenv("UPDATE_QUEUE_NAME"), "home-ip-monitor-updates")
 
-	// Set AWS region with default value
-	AWSRegion := cmp.Or(os.Getenv("AWS_REGION"), "us-west-2")
-	os.Setenv("AWS_REGION", AWSRegion)
+	// Set AWS region with default value if it is not defined
+	config.AWSRegion = cmp.Or(os.Getenv("AWS_REGION"), "us-east-1")
 
 	// Validate AWS Route53 configuration
 	if config.AWSZoneID, envVariableFound = os.LookupEnv("AWS_ZONE_ID"); !envVariableFound {
