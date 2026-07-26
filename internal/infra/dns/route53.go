@@ -1,4 +1,4 @@
-package route53
+package dns
 
 import (
 	"context"
@@ -19,7 +19,7 @@ import (
 
 const txtValue = "\"home-ip-updater-validation\""
 const awsRegion = "us-east-1"
-const tracerName = "github.com/a-castellano/home-ip-updater/internal/infra/route53"
+const tracerName = "github.com/a-castellano/home-ip-updater/internal/infra/dns"
 
 const awsRequestTimeout = 10 * time.Second
 
@@ -42,7 +42,7 @@ func (updater *Route53Updater) updateRoute53Record(ctx context.Context, recordTy
 	defer span.End()
 
 	log := logger.FromContext(ctx).With("operation", "updateRoute53Record")
-	log.InfoContext(ctx, "updating dns record using route53 updater", "recordType", recordType, "value", value)
+	log.InfoContext(ctx, "updating DNS record using Route53 updater", "recordType", recordType, "value", value)
 
 	// Prepare the DNS record change request
 	input := &route53.ChangeResourceRecordSetsInput{
@@ -78,7 +78,7 @@ func (updater *Route53Updater) updateRoute53Record(ctx context.Context, recordTy
 		return errChange
 	}
 
-	log.InfoContext(ctx, "dns record updated", "recordType", recordType, "value", value)
+	log.InfoContext(ctx, "DNS record updated", "recordType", recordType, "value", value)
 	return nil
 }
 
@@ -100,7 +100,7 @@ func NewRoute53Updater(ctx context.Context, zoneID string, subdomain string) (*R
 	defer span.End()
 
 	log := logger.FromContext(ctx).With("operation", "NewRoute53Updater")
-	log.InfoContext(ctx, "setting up new route53 updater")
+	log.InfoContext(ctx, "setting up new Route53 updater")
 
 	updater.zoneID = zoneID
 	updater.record = subdomain
@@ -134,6 +134,6 @@ func NewRoute53Updater(ctx context.Context, zoneID string, subdomain string) (*R
 		return nil, updateErr
 	}
 
-	log.InfoContext(ctx, "route53 updater created")
+	log.InfoContext(ctx, "Route53 updater created")
 	return &updater, nil
 }

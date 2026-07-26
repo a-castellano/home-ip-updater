@@ -1,6 +1,6 @@
 //go:build integration_tests
 
-package route53
+package dns
 
 import (
 	"context"
