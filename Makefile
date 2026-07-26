@@ -35,15 +35,15 @@ msan: ## Run memory sanitizer
 
 # Generate code coverage report
 coverage: ## Generate global code coverage report
-	./scripts/coverage.sh;
+	./development/coverage.sh;
 
-# Generate HTML code coverage report
+# Render the report produced by coverage as HTML, without running the tests again
 coverhtml: ## Generate global code coverage report in HTML
-	./scripts/coverage.sh html;
+	go tool cover -html=cover/coverage.report -o coverage.html;
 
 # Build the binary executable
 build: ## Build the binary file
-	@go build -v $(PKG)
+	@go build -v $(PKG)/cmd/$(PROJECT_NAME)
 
 # Remove previous build artifacts
 clean: ## Remove previous build

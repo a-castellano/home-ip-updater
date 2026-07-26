@@ -25,6 +25,14 @@ cover/*
 coverage.html
 
 main
-home-ip-updater
+/home-ip-updater
 
 aws_credentials
+
+.vscode/*
+
+# Local Go module cache (populated by development/docker-compose.yml)
+development/.gomodcache/
+development/env_variables
+
+plan/*

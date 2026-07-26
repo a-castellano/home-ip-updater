@@ -5,14 +5,34 @@ version: "3.8"
 services:
   # Go development container with the project code mounted
   golang:
-    image: registry.windmaker.net:5005/a-castellano/limani/base_golang_1_24
+    image: harbor.windmaker.net/limani/base_golang_1_26
     volumes:
       - ..:/app # Mount the project directory into the container
+      - ./.gomodcache:/root/go/pkg/mod # Persist Go module cache locally (dot-prefixed so Go package patterns like ./... never walk into it)
     working_dir: /app
     command: tail -f /dev/null # Keep container running
     networks:
       home-ip-updater-net:
         ipv4_address: 172.17.0.10
+
+  # RabbitMQ server for message broker testing
+  rabbitmq:
+    image: harbor.windmaker.net/limani/base_rabbitmq_server
+    ports:
+      - "5672:5672" # AMQP protocol port
+      - "15672:15672" # RabbitMQ management interface port
+    networks:
+      home-ip-updater-net:
+        ipv4_address: 172.17.0.30
+
+  # otelcollector server for opentelemetry testing
+  otelcollector:
+    image: harbor.windmaker.net/limani/base_otelcol
+    ports:
+      - "55679:55679" # zPages debugging interface
+    networks:
+      home-ip-updater-net:
+        ipv4_address: 172.17.0.60
 
 # Custom network configuration for service communication
 networks:

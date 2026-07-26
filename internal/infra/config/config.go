@@ -5,14 +5,14 @@ package config
 
 import (
 	"cmp"
+	"context"
 	"errors"
 	"os"
 
-	rabbitmqconfig "github.com/a-castellano/go-types/rabbitmq"
+	logger "github.com/a-castellano/go-services/infra/logger"
+	rabbitmqconfig "github.com/a-castellano/go-types/types/rabbitmq"
 )
 
-// Config contains all configuration variables required by the home-ip-updater service.
-// It includes settings for AWS Route53, RabbitMQ, and domain configuration.
 type Config struct {
 	AWSZoneID      string                 // AWS Route53 hosted zone ID for DNS updates
 	Subdomain      string                 // Subdomain to update with new IP addresses
@@ -32,8 +32,10 @@ type Config struct {
 //
 // Optional environment variables:
 //   - UPDATE_QUEUE_NAME: RabbitMQ queue name (defaults to "home-ip-monitor-updates")
-//   - AWS_REGION: AWS region (defaults to "us-west-2")
-func NewConfig() (*Config, error) {
+func NewConfig(ctx context.Context) (*Config, error) {
+
+	log := logger.FromContext(ctx).With("operation", "NewConfig")
+
 	config := Config{}
 
 	var envVariableFound bool
@@ -49,19 +51,18 @@ func NewConfig() (*Config, error) {
 
 	// Set RabbitMQ queue name with default value
 	config.UpdateQueue = cmp.Or(os.Getenv("UPDATE_QUEUE_NAME"), "home-ip-monitor-updates")
-
-	// Set AWS region with default value
-	AWSRegion := cmp.Or(os.Getenv("AWS_REGION"), "us-west-2")
-	os.Setenv("AWS_REGION", AWSRegion)
+	log.DebugContext(ctx, "update queue name set", "queue_name", config.UpdateQueue)
 
 	// Validate AWS Route53 configuration
 	if config.AWSZoneID, envVariableFound = os.LookupEnv("AWS_ZONE_ID"); !envVariableFound {
 		return nil, errors.New("AWS_ZONE_ID env variable must be set")
 	}
+	log.DebugContext(ctx, "AWS zone ID configured", "zone_id", config.AWSZoneID)
 
 	if config.Subdomain, envVariableFound = os.LookupEnv("SUBDOMAIN"); !envVariableFound {
 		return nil, errors.New("SUBDOMAIN env variable must be set")
 	}
+	log.DebugContext(ctx, "subdomain configured", "subdomain", config.Subdomain)
 
 	// Load RabbitMQ configuration from environment variables
 	var rabbitmqConfigErr error
@@ -69,6 +70,8 @@ func NewConfig() (*Config, error) {
 	if rabbitmqConfigErr != nil {
 		return nil, rabbitmqConfigErr
 	}
+	log.DebugContext(ctx, "rabbitmq config set", "rabbitmq config", config.RabbitmqConfig)
 
+	log.InfoContext(ctx, "configuration set successful")
 	return &config, nil
 }
