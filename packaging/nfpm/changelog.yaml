@@ -1,3 +1,14 @@
+- semver: 0.0.4
+  date: 2026-07-27T12:00:00+01:00
+  packager: Álvaro Castellano Vela <alvaro.castellano.vela@gmail>
+  changes:
+    - note: |-
+        Refactor application code following clean architecture
+        Add structured logging and OpenTelemetry tracing/metrics
+        AWS_REGION is no longer used
+      author:
+        name: Álvaro Castellano Vela
+        email: alvaro@windmaker.net
 - semver: 0.0.3
   date: 2025-08-08T20:30:00+01:00
   packager: Álvaro Castellano Vela <alvaro.castellano.vela@gmail>
