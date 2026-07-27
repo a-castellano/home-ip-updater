@@ -5,13 +5,25 @@
 # https://git.windmaker.net/a-castellano/home-ip-updater
 #
 
+# Application and logging
+
+APP_NAME="home-ip-updater"
+SLOG_LEVEL="Info"
+SLOG_FORMAT="JSON"
+
+# Telemetry (opt-in)
+
+ENABLE_TELEMETRY="false"
+# OTEL_EXPORTER_OTLP_ENDPOINT="http://otelcollector:4317"
+
+# Queue configuration
+
 UPDATE_QUEUE_NAME="home-ip-monitor-updates"
 
 # AWS config
 
 AWS_ACCESS_KEY_ID=""
 AWS_SECRET_ACCESS_KEY=""
-AWS_REGION=""
 AWS_ZONE_ID=""
 SUBDOMAIN=""
 

@@ -1,0 +1,151 @@
+//go:build integration_tests
+
+package dns
+
+import (
+	"context"
+	"encoding/json"
+	"os"
+	"strings"
+	"testing"
+)
+
+// envVariable holds the state of a single environment variable while the
+// tests run: its name, the value it had before the suite touched it, and
+// whether it was defined at all.
+type envVariable struct {
+	Value        string
+	IsDefined    bool
+	VariableName string
+}
+
+// envVariables lists every variable this package reads or writes, so setUp
+// and teardown can save, clear and restore them generically. AWS_REGION
+// belongs here even though it is optional: NewConfig writes it back with
+// os.Setenv, so the suite would otherwise leak it into the environment.
+//
+// The env handling in this file (this map plus setUp and teardown) was
+// rewritten by an AI agent (Claude); the test functions below are unchanged.
+var envVariables = map[string]envVariable{
+	//aws
+	"aws_access_key": {VariableName: "AWS_ACCESS_KEY_ID"},
+	"aws_secret_key": {VariableName: "AWS_SECRET_ACCESS_KEY"},
+}
+
+// setUp saves the current environment variables and clears them for testing.
+// This ensures that tests start with a clean environment and can properly
+// test the validation logic without interference from existing environment variables.
+func setUp() {
+
+	for key, variable := range envVariables {
+
+		if envValue, found := os.LookupEnv(variable.VariableName); found {
+			variable.Value = envValue
+			variable.IsDefined = true
+		} else {
+			variable.IsDefined = false
+		}
+
+		os.Unsetenv(variable.VariableName)
+
+		envVariables[key] = variable
+	}
+
+}
+
+// teardown restores the original environment variables after each test.
+// This ensures that tests don't affect each other and the environment
+// is returned to its original state.
+func teardown() {
+
+	for _, variable := range envVariables {
+		if variable.IsDefined {
+			os.Setenv(variable.VariableName, variable.Value)
+		} else {
+			os.Unsetenv(variable.VariableName)
+		}
+	}
+
+}
+
+type Secrets struct {
+	AWSAccessKeyId     string `json:"AWS_ACCESS_KEY_ID"`
+	AWSSecretAccessKey string `json:"AWS_SECRET_ACCESS_KEY"`
+	AWSZoneID          string `json:"AWS_ZONE_ID"`
+	Subdomain          string `json:"SUBDOMAIN"`
+}
+
+func TestUpdaterWithoutEnvVariables(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	ctx := context.Background()
+
+	_, err := NewRoute53Updater(ctx, "invalidzone", "invalidsubdomain")
+
+	if err == nil {
+		t.Fatalf("TestUpdaterWithoutEnvVariables should fail.")
+	}
+
+	expectedError := "no EC2 IMDS role found"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Fatalf("TestUpdaterWithoutEnvVariables error should contain \"%s\", it was \"%s\"", expectedError, err.Error())
+	}
+}
+
+func TestUpdaterWithInvalidVariables(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	os.Setenv("AWS_ACCESS_KEY_ID", "test")
+	os.Setenv("AWS_SECRET_ACCESS_KEY", "test")
+
+	ctx := context.Background()
+
+	_, err := NewRoute53Updater(ctx, "invalidzone", "invalidsubdomain")
+
+	if err == nil {
+		t.Fatalf("TestUpdaterWithInvalidVariables should fail.")
+	}
+
+	expectedError := "security token included in the request is invalid"
+	if !strings.Contains(err.Error(), expectedError) {
+		t.Fatalf("TestUpdaterWithInvalidVariables error should contain \"%s\", it was \"%s\"", expectedError, err.Error())
+	}
+}
+
+func TestUpdaterWithValidVariables(t *testing.T) {
+
+	setUp()
+	defer teardown()
+
+	var secrets Secrets
+	scretData, readErr := os.ReadFile("../../../development/secrets.json")
+	if readErr != nil {
+		t.Fatalf("TestUpdaterWithValidVariables should not fail reading secret file, error was \"%s\"", readErr.Error())
+	}
+
+	jsonErr := json.Unmarshal(scretData, &secrets)
+	if jsonErr != nil {
+		t.Fatalf("TestUpdaterWithValidVariables should not fail reading json file content, error was \"%s\"", jsonErr.Error())
+	}
+
+	os.Setenv("AWS_ACCESS_KEY_ID", secrets.AWSAccessKeyId)
+	os.Setenv("AWS_SECRET_ACCESS_KEY", secrets.AWSSecretAccessKey)
+
+	ctx := context.Background()
+
+	updater, err := NewRoute53Updater(ctx, secrets.AWSZoneID, secrets.Subdomain)
+
+	if err != nil {
+		t.Fatalf("TestUpdaterWithValidVariables should not fail, error was \"%s\"", err.Error())
+	}
+
+	updateError := updater.UpdateRecord(ctx, "1.1.1.1")
+
+	if updateError != nil {
+		t.Fatalf("TestUpdaterWithValidVariables should not fail when calling to UpdateRecord, error was \"%s\"", updateError.Error())
+	}
+}

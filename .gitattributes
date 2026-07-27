@@ -1,0 +1,2 @@
+# .gitattributes
+development/secrets.json filter=git-crypt diff=git-crypt

@@ -32,14 +32,15 @@ The Home IP Updater is designed to:
 
 - **Reliable Message Processing**: Handles RabbitMQ messages with error recovery
 - **Graceful Shutdown**: Proper signal handling for clean service termination
-- **System Integration**: Syslog logging for production environments
+- **Structured Logging**: `slog` JSON logs written to stdout, collected by the journal when run under systemd
+- **Observability**: Opt-in OpenTelemetry traces and metrics exported over OTLP
 - **Configurable**: Environment-based configuration management
 - **Production Ready**: Systemd service with security hardening
 - **AWS Integration**: Automatic DNS record updates in Route53
 
 ## Prerequisites
 
-- **Go 1.24+** for building and development
+- **Go 1.26+** for building and development
 - **RabbitMQ Server** for message queuing
 - **AWS Account** with Route53 access
 - **Linux/Unix** system for production deployment
@@ -50,30 +51,51 @@ The Home IP Updater is designed to:
 
 #### Required Variables
 
-| Variable              | Description                            | Example                                    |
-| --------------------- | -------------------------------------- | ------------------------------------------ |
-| AWS_ACCESS_KEY_ID     | AWS access key for Route53 API access  | "AKIAIOSFODNN7EXAMPLE"                     |
-| AWS_SECRET_ACCESS_KEY | AWS secret key for Route53 API access  | "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" |
-| AWS_ZONE_ID           | Route53 hosted zone ID for DNS updates | "Z1234567890ABC"                           |
-| SUBDOMAIN             | Subdomain to update                    | "home.example.com"                         |
+| Variable                | Description                            | Example                                    |
+| ----------------------- | -------------------------------------- | ------------------------------------------ |
+| `AWS_ACCESS_KEY_ID`     | AWS access key for Route53 API access  | `"AKIAIOSFODNN7EXAMPLE"`                   |
+| `AWS_SECRET_ACCESS_KEY` | AWS secret key for Route53 API access  | `"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"` |
+| `AWS_ZONE_ID`           | Route53 hosted zone ID for DNS updates | `"Z1234567890ABC"`                         |
+| `SUBDOMAIN`             | Subdomain to update                    | `"home.example.com"`                       |
+
+The Route53 client always talks to the `us-east-1` endpoint, since Route53 is a global service. No AWS region variable is read.
 
 #### Optional Variables
 
-| Variable          | Description                        | Default                   |
-| ----------------- | ---------------------------------- | ------------------------- |
-| UPDATE_QUEUE_NAME | RabbitMQ queue name for IP updates | "home-ip-monitor-updates" |
-| AWS_REGION        | AWS region for Route53 operations  | "us-west-2"               |
+| Variable            | Description                        | Default                     |
+| ------------------- | ---------------------------------- | --------------------------- |
+| `UPDATE_QUEUE_NAME` | RabbitMQ queue name for IP updates | `"home-ip-monitor-updates"` |
+
+#### Application and Logging
+
+Logging is handled through [go-types `slog`](https://git.windmaker.net/a-castellano/go-types/-/tree/master/slog). `APP_NAME` is required by that type; the rest fall back to sane defaults.
+
+| Variable          | Description                                   | Default      |
+| ----------------- | --------------------------------------------- | ------------ |
+| `APP_NAME`        | Application name attached to every log entry  | _(required)_ |
+| `SLOG_LEVEL`      | Log level: `Debug`, `Info`, `Warn` or `Error` | `Info`       |
+| `SLOG_FORMAT`     | Log format: `JSON` or `plain`                 | `JSON`       |
+| `SLOG_ADD_SOURCE` | Whether to add `file:line` to log entries     | `true`       |
+
+#### Telemetry
+
+OpenTelemetry is opt-in through [go-types `opentelemetry`](https://git.windmaker.net/a-castellano/go-types/-/tree/master/opentelemetry). `APP_NAME` doubles as the telemetry `service.name`, so `OTEL_SERVICE_NAME` and `OTEL_RESOURCE_ATTRIBUTES` must **not** be set — the config rejects them.
+
+| Variable                      | Description                                                                                    | Default            |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- | ------------------ |
+| `ENABLE_TELEMETRY`            | Enables traces and metrics when set to `"true"` (opt-in)                                       | `false`            |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP collector endpoint (`http://` or `https://`); when unset, traces/metrics export to stdout | _(unset → stdout)_ |
 
 #### RabbitMQ Configuration
 
 The following RabbitMQ environment variables are required (see [go-types documentation](https://git.windmaker.net/a-castellano/go-types/-/tree/master/rabbitmq?ref_type=heads)):
 
-| Variable          | Description              | Default     |
-| ----------------- | ------------------------ | ----------- |
-| RABBITMQ_HOST     | RabbitMQ server hostname | "localhost" |
-| RABBITMQ_PORT     | RabbitMQ server port     | "5672"      |
-| RABBITMQ_USER     | RabbitMQ username        | "guest"     |
-| RABBITMQ_PASSWORD | RabbitMQ password        | "guest"     |
+| Variable            | Description              | Default       |
+| ------------------- | ------------------------ | ------------- |
+| `RABBITMQ_HOST`     | RabbitMQ server hostname | `"localhost"` |
+| `RABBITMQ_PORT`     | RabbitMQ server port     | `5672`        |
+| `RABBITMQ_USER`     | RabbitMQ username        | `"guest"`     |
+| `RABBITMQ_PASSWORD` | RabbitMQ password        | `"guest"`     |
 
 ### AWS IAM Policy
 
@@ -120,13 +142,21 @@ The project includes a Docker Compose setup for development:
 
 ```bash
 # Start development environment
-cd development
-docker-compose up -d
+podman compose -f development/docker-compose.yml up -d
 
 # Access services:
 # - RabbitMQ Management: http://localhost:15672
 # - RabbitMQ AMQP: localhost:5672
+# - OpenTelemetry collector zPages: http://localhost:55679/debug/tracez
 ```
+
+Go commands run inside the `golang` container, which uses the same image as CI and production:
+
+```bash
+podman compose -f development/docker-compose.yml exec golang make test
+```
+
+`development/env_variables` holds the environment used when running the service by hand against that environment.
 
 ### Building
 
@@ -156,36 +186,41 @@ sudo systemctl status windmaker-home-ip-updater.service
 sudo journalctl -u windmaker-home-ip-updater.service -f
 ```
 
+The unit writes its logs to stdout and stderr, both collected by the journal, so `journalctl` is the only place to look for them.
+
 ### Environment Configuration for Systemd
 
-Create an environment file for the systemd service:
+The package installs a sample file at `/etc/default/windmaker-home-ip-updater-example`. Copy it to `/etc/default/windmaker-home-ip-updater` (the path read by the systemd unit) and edit it to configure the service:
 
 ```bash
-# Create environment file
-sudo mkdir -p /etc/windmaker-home-ip-updater
-sudo nano /etc/windmaker-home-ip-updater/environment
+sudo cp /etc/default/windmaker-home-ip-updater-example /etc/default/windmaker-home-ip-updater
+sudo vim /etc/default/windmaker-home-ip-updater
 ```
 
-Add the following environment variables:
-
 ```bash
-# AWS Configuration
-AWS_ACCESS_KEY_ID=your_aws_access_key
-AWS_SECRET_ACCESS_KEY=your_aws_secret_key
-AWS_ZONE_ID=your_route53_zone_id
-AWS_REGION=us-west-2
+# Application and logging
+APP_NAME="home-ip-updater"
+SLOG_LEVEL="Info"
+SLOG_FORMAT="JSON"
 
-# Domain Configuration
-SUBDOMAIN=home.example.com
+# Telemetry (opt-in)
+ENABLE_TELEMETRY="false"
+# OTEL_EXPORTER_OTLP_ENDPOINT="http://otelcollector:4317"
 
-# RabbitMQ Configuration
-RABBITMQ_HOST=localhost
+# Queue configuration
+UPDATE_QUEUE_NAME="home-ip-monitor-updates"
+
+# AWS config
+AWS_ACCESS_KEY_ID="your_aws_access_key"
+AWS_SECRET_ACCESS_KEY="your_aws_secret_key"
+AWS_ZONE_ID="your_route53_zone_id"
+SUBDOMAIN="home.example.com"
+
+# RabbitMQ config
+RABBITMQ_HOST="localhost"
 RABBITMQ_PORT=5672
-RABBITMQ_USER=guest
-RABBITMQ_PASSWORD=guest
-
-# Queue Configuration
-UPDATE_QUEUE_NAME=home-ip-monitor-updates
+RABBITMQ_USER="guest"
+RABBITMQ_PASSWORD="guest"
 ```
 
 ## License
